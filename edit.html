@@ -76,6 +76,11 @@
 
 <label>Звук фидбека (URL)</label>
 <input type="url" id="openSound" placeholder="https://.../open.mp3">
+<label>Загрузить звук лопания (MP3)</label>
+<input type="file" id="popSoundFile" accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg">
+
+<label>Загрузить звук фидбека (MP3)</label>
+<input type="file" id="openSoundFile" accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg">
 
 <h2 style="margin-top:14px">🎯 Задания (по одному на строке)</h2>
 <textarea id="tasks" placeholder="Task 1&#10;Task 2&#10;Task 3"></textarea>
@@ -187,8 +192,21 @@
   const bgImage = $('#bgImage').value.trim();
   const finalFeedback = $('#finalFeedback').value.trim();
   const feedbackImage = $('#feedbackImage').value.trim();
-  const popSound = $('#popSound').value.trim();
-  const openSound = $('#openSound').value.trim();
+ let popSoundUrl = $('#popSound').value.trim() || 'https://nikashum93.github.io/utki/pop.mp3';
+let openSoundUrl = $('#openSound').value.trim() || 'https://nikashum93.github.io/utki/open.mp3';
+
+// Проверяем, выбрал ли пользователь файл
+const popFile = $('#popSoundFile').files[0];
+const openFile = $('#openSoundFile').files[0];
+
+if (popFile) {
+  const popUpload = await uploadFile(popFile);
+  if (popUpload?.url) popSoundUrl = popUpload.url;
+}
+if (openFile) {
+  const openUpload = await uploadFile(openFile);
+  if (openUpload?.url) openSoundUrl = openUpload.url;
+}
   const tasks = $('#tasks').value.split('\n').map(s=>s.trim()).filter(Boolean);
 
   const taskBgColor = $('#taskBgColor').value;
@@ -204,7 +222,8 @@
   return {
     language: lang,
     font,
-    sounds: { pop: popSound, open: openSound },
+  sounds: { pop: popSoundUrl, open: openSoundUrl },
+
     style: {
       bgImage,
       task: { bgColor: taskBgColor, borderColor: taskBorderColor, opacity: taskBgOpacity, fontSize: taskFontSize, neon: taskNeon },
@@ -221,6 +240,26 @@
       if(!cfg.tasks || !cfg.tasks.length) return 'Добавьте хотя бы одну строку с заданием.';
       return null;
     }
+// Загрузка файла на сервер публикации
+async function uploadFile(file) {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', 'sounds');
+  form.append('key', PUBLISH_KEY);
+
+  try {
+    const res = await fetch("https://server-kjnn.onrender.com/upload", {
+      method: "POST",
+      body: form
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return data; // data.url — ссылка на файл
+  } catch (e) {
+    alert("Ошибка загрузки файла: " + e.message);
+    return null;
+  }
+}
 
     async function publish(){
       const cfg = collectConfig();
