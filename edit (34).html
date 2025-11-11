@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Редактор — Utki</title>
+  <style>
+    :root{
+      --ui-acc:#ffd700;
+      --card:#151515;
+      --ink:#eee;
+      --muted:#b7b7b7;
+      --stroke:#2a2a2a;
+      --gap:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:#0d0d0d; color:var(--ink);
+      font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      display:flex; flex-direction:column;
+    }
+    header{
+      display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--stroke);
+      position:sticky; top:0; background:#0d0d0d; z-index:2;
+    }
+    header h1{font-size:20px; margin:0; color:var(--ui-acc); font-weight:800}
+    main{display:grid; grid-template-columns: 430px 1fr; gap:22px; padding:20px; max-width:1500px; width:100%; margin:0 auto}
+    .card{background:var(--card); border:1px solid var(--stroke); border-radius:14px; padding:18px; box-shadow:0 0 28px rgba(255,215,0,.06)}
+    .card h2{margin:0 0 14px; font-size:18px; color:var(--ui-acc)}
+    label{display:block; margin:12px 0 8px; font-size:15px; color:#fff; font-weight:600}
+    input[type=text], input[type=number], input[type=url], textarea, select{
+      width:100%; background:#101010; color:#fff; border:1px solid #3a3a3a; border-radius:10px; padding:12px 14px; font-size:16px;
+      outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    textarea{min-height:110px; resize:vertical}
+    input:focus, textarea:focus, select:focus{border-color:#4b4b4b; box-shadow:0 0 0 3px rgba(255,215,0,.16)}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap)}
+    .levels .level{background:#111; border:1px solid #2a2a2a; border-radius:12px; padding:16px}
+    .level h3{margin:0 0 10px; font-size:16px; color:#fff; display:flex; align-items:center; justify-content:space-between}
+    .toolbar{display:flex; gap:12px; flex-wrap:wrap}
+    .result{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start}
+    .result textarea{height:120px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .hint{color:var(--muted); font-size:13px; margin-top:8px}
+    button{
+      background:linear-gradient(90deg,#ffbf00,#ffd700); color:#000; border:none; border-radius:12px; font-weight:800;
+      padding:14px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; font-size:16px;
+    }
+    button:hover{transform:translateY(-1px); box-shadow:0 8px 26px rgba(255,215,0,.28)}
+    .btn-ghost{background:transparent; color:#fff; border:1px solid #444}
+  </style>
+  <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
+</head>
+<body>
+  <header><h1>Редактор «Utki»</h1></header>
+  <main>
+    <section class="card">
+      <h2>⚙️ Настройки</h2>
+      <label>Язык</label>
+      <select id="language"></select>
+
+      <label>Шрифт</label>
+      <select id="font"></select>
+
+      <label>Картинка летающего предмета (URL)</label>
+      <input type="url" id="bgImage" placeholder="https://.../duck.gif">
+
+      <label>Финальный текст</label>
+      <input type="text" id="finalFeedback" placeholder="🎉 Well Done!">
+      
+      <h2 style="margin-top:14px">🎯 Задания (по одному на строке)</h2>
+      <textarea id="tasks" placeholder="Task 1&#10;Task 2&#10;Task 3"></textarea>
+
+      <h2 style="margin-top:14px">🚀 Публикация</h2>
+      <div class="row">
+        <button id="saveBtn">💾 Сохранить и получить iframe</button>
+        <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
+      </div>
+      <div class="result" style="margin-top:10px">
+        <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
+        <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
+      </div>
+      <div class="hint">После публикации подождите 30–60 секунд (кеш GitHub Pages).</div>
+    </section>
+
+    <section class="card">
+      <h2>🧪 Предпросмотр</h2>
+      <div id="preview" style="display:flex; align-items:center; gap:12px;">
+        <div style="width:36px; height:36px; background:#222; border-radius:8px; background-size:contain; background-position:center; background-repeat:no-repeat;" id="iconPrev"></div>
+        <div id="textPrev" style="font-weight:800; font-size:22px;">0 / 0</div>
+      </div>
+      <div class="hint">Иконка в счётчике берётся из поля «Картинка летающего предмета».</div>
+    </section>
+  </main>
+
+  <script>
+    const $ = s => document.querySelector(s);
+
+    const ENDPOINT    = "https://server-kjnn.onrender.com/publish";
+    const PUBLISH_KEY = "nika_read_pub_2025";
+    const BASE_MAIN   = "https://nikashum93.github.io/utki/main.html";
+
+    // Языки/шрифты (сокращённый набор)
+    const FONT_MAP = {
+      ru: ["Rubik","PT Sans","Montserrat","Noto Sans"],
+      en: ["Inter","Poppins","Roboto","Open Sans","Rubik"]
+    };
+    function fillLanguageSelect(){
+      const sel = $('#language');
+      sel.innerHTML = '<option value=\"ru\">Русский</option><option value=\"en\">English</option>';
+      sel.value = 'ru';
+    }
+    function fillFontsForLanguage(lang){
+      const sel = $('#font');
+      sel.innerHTML = '';
+      (FONT_MAP[lang] || FONT_MAP.en).forEach(f => {
+        const opt = document.createElement('option');
+        opt.textContent = f;
+        sel.appendChild(opt);
+      });
+      sel.value = (FONT_MAP[lang] || FONT_MAP.en)[0];
+      applyGoogleFont(sel.value);
+    }
+    function applyGoogleFont(fontName){
+      const gf = document.getElementById('gf');
+      const family = fontName.replace(/ /g, '+');
+      gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+      document.body.style.fontFamily = fontName + ', system-ui, sans-serif';
+    }
+
+    function collectConfig(){
+      const lang = $('#language').value;
+      const font = $('#font').value;
+      const bgImage = $('#bgImage').value.trim();
+      const finalFeedback = $('#finalFeedback').value.trim();
+      const tasks = $('#tasks').value.split('\\n').map(s=>s.trim()).filter(Boolean);
+
+      // JSON в формате, который понимает main.html
+      return {
+        language: lang,
+        font,
+        style: { bgImage },
+        finalFeedback,
+        tasks: tasks.map(t => ({ prompt: t }))
+      };
+    }
+
+    function validate(cfg){
+      if(!cfg.tasks || !cfg.tasks.length) return 'Добавьте хотя бы одну строку с заданием.';
+      return null;
+    }
+
+    async function publish(){
+      const cfg = collectConfig();
+      const err = validate(cfg);
+      if(err){ alert(err); return; }
+
+      const id = makeIdFromFirstTask(cfg);
+      const payload = {
+        id,
+        mode: "json",
+        folder: "data",
+        content: JSON.stringify(cfg, null, 2)
+      };
+      try{
+        const res = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Publish-Key": PUBLISH_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok){
+          const t = await res.text().catch(()=>res.statusText);
+          throw new Error(t || 'Server error');
+        }
+        const iframe = `<iframe src="${BASE_MAIN}?id=${encodeURIComponent(id)}" width="900" height="640" style="border:0;" allow="autoplay" allowfullscreen></iframe>`;
+        $('#iframeOut').value = iframe;
+        alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
+      }catch(e){
+        alert("Сеть/сервер: " + e.message);
+      }
+    }
+
+    function makeIdFromFirstTask(cfg){
+      const first = (cfg.tasks[0]?.prompt || 'task').trim();
+      const slug = first.toLowerCase()
+        .normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'')
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')
+        .slice(0,40) || 'task';
+      const d=new Date(),p=n=>String(n).padStart(2,'0');
+      const stamp = `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+      return `${slug}-${stamp}`;
+    }
+
+    function quickTest(){
+      const cfg = collectConfig();
+      const err = validate(cfg);
+      if(err){ alert(err); return; }
+      alert('JSON валиден. Заданий: ' + cfg.tasks.length);
+      console.log(cfg);
+    }
+
+    function copyIframe(){
+      const v = $('#iframeOut').value.trim();
+      if(!v){ alert('Сначала опубликуйте, чтобы получить iframe.'); return; }
+      navigator.clipboard.writeText(v).then(()=>{}).catch(()=>{});
+    }
+
+    // Preview bindings
+    function refreshPreview(){
+      const url = $('#bgImage').value.trim();
+      $('#iconPrev').style.backgroundImage = url ? `url(${url})` : 'none';
+      const lines = $('#tasks').value.split('\\n').filter(Boolean).length;
+      $('#textPrev').textContent = (0) + ' / ' + (lines || 0);
+    }
+
+    // Init
+    fillLanguageSelect();
+    fillFontsForLanguage($('#language').value);
+    document.querySelectorAll('#language, #font').forEach(el => el.addEventListener('change', e => {
+      if(e.target.id==='font') applyGoogleFont(e.target.value);
+    }));
+    ['bgImage','tasks','finalFeedback'].forEach(id => $('#'+id).addEventListener('input', refreshPreview));
+
+    $('#saveBtn').addEventListener('click', publish);
+    $('#testBtn').addEventListener('click', quickTest);
+    $('#copyBtn').addEventListener('click', copyIframe);
+    refreshPreview();
+  </script>
+</body>
+</html>
