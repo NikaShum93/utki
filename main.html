@@ -18,7 +18,7 @@
       inset: 0;
       pointer-events: auto;
       overflow: hidden;
-      z-index: 1;
+      z-index: 999999; /* поверх объектов Genially */
     }
 
     /* HUD: счётчик с иконкой предмета */
@@ -112,10 +112,21 @@
 </head>
 <body>
   <div id="bubble-extension" aria-live="polite"></div>
+  <div id="dbg" style="position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,.55);color:#fff;padding:6px 10px;border-radius:8px;font:12px/1.3 ui-monospace;z-index:1000000;display:none"></div>
+
   <script>
     (function(){
       const root = document.getElementById('bubble-extension');
       const urlParams = new URLSearchParams(window.location.search);
+      const DEBUG = urlParams.get('debug') === '1';
+      const dbg = () => document.getElementById('dbg');
+      function logDbg(msg){
+        if(!DEBUG) return;
+        const d = dbg(); if(!d) return;
+        d.style.display='block';
+        d.textContent = String(msg);
+      }
+
       const JSON_BASE = "https://nikashum93.github.io/texts/data/"; // сервер с JSON
 
       // --- входные данные ---
@@ -178,9 +189,11 @@
           try{
             const res = await fetch(`${JSON_BASE}${encodeURIComponent(id)}.json?v=${Date.now()}`, {cache:'no-store'});
             const cfg = await res.json();
+            logDbg('JSON ok');
             hydrateFromConfig(cfg);
           }catch(e){
             console.warn('JSON load failed', e);
+            logDbg('JSON fail → URL');
             hydrateFromURL(); // fallback
           }
         } else {
