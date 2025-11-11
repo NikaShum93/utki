@@ -112,11 +112,11 @@ Object.assign(counter.style, {
 
   root.appendChild(counter);
 
-  function refreshCounter(){
-    total = Object.keys(TASKS).length;
-    setCounterIcon(bubbleImg);
-    counterTxt.innerHTML = `🫧 <strong>${popped} / ${total}</strong>`;
-  }
+ function refreshCounter(){
+  total = Object.keys(TASKS).length;
+  setCounterIcon(bubbleImg);
+  counterTxt.innerHTML = `<strong>${popped} / ${total}</strong>`;
+}
 
   // ждем JSON, если есть id, и только потом спавним
   (async function init(){
@@ -126,11 +126,33 @@ Object.assign(counter.style, {
         const cfg = await res.json();
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
         if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
-        if (Array.isArray(cfg?.tasks) && cfg.tasks.length){
-          // перезаписываем TASKS из редактора
-          Object.keys(TASKS).forEach(k => delete TASKS[k]);
-          cfg.tasks.forEach((t, i) => { TASKS[i+1] = String(t?.prompt ?? t?.text ?? ''); });
-        }
+       if (cfg?.tasks && cfg.tasks.length){
+  // перезаписываем TASKS из редактора
+  Object.keys(TASKS).forEach(k => delete TASKS[k]);
+
+  // нормализуем любые варианты: массив строк, массив объектов, одна строка с \n
+  let arr = cfg.tasks;
+
+  // если вдруг пришла одна строка внутри массива — разбиваем по переводам
+  if (arr.length === 1 && typeof arr[0] === 'string') {
+    arr = arr[0].split('\n');
+  }
+
+  // превращаем в чистый массив строк
+  const flat = [];
+  for (const item of arr) {
+    if (typeof item === 'string') {
+      flat.push(...item.split('\n'));
+    } else {
+      flat.push(String(item?.prompt ?? item?.text ?? ''));
+    }
+  }
+
+  flat.map(s => s.trim()).filter(Boolean).forEach((t, i) => {
+    TASKS[i + 1] = t;
+  });
+}
+
       } catch(e) {
         console.warn('JSON load failed', e);
       }
