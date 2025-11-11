@@ -331,7 +331,7 @@ function spawnAll(){
 function showFinal() {
   counter.remove();
   const chest = document.createElement('img');
-  chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
+  chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
   Object.assign(chest.style, {
     position: 'absolute',
     top: '50%',
@@ -346,15 +346,14 @@ function showFinal() {
   });
   root.appendChild(chest);
 
-  // При клике сундук открывается и запускается блеск + фидбек
-  chest.addEventListener('click', () => {
-    chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
-    chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
+  const openSound = new Audio('https://nikashum93.github.io/utki/open.mp3');
 
-    const openSoundUrl = config?.sounds?.open || 'https://nikashum93.github.io/utki/open.mp3';
+  chest.addEventListener('click', () => {
+    chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
+    chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
     openSound.play().catch(() => {});
 
-    // 🌟 Создаём блёстки
+    // 🌟 блёстки
     for (let i = 0; i < 40; i++) {
       const sparkle = document.createElement('div');
       sparkle.textContent = ['✨', '💫', '🌟', '🔮'][Math.floor(Math.random() * 4)];
@@ -365,7 +364,7 @@ function showFinal() {
         transform: `translate(-50%, -50%) scale(${Math.random() * 0.6 + 0.6})`,
         fontSize: `${Math.random() * 20 + 10}px`,
         opacity: '0.8',
-        animation: `sparkFly 1.4s ease-out forwards`,
+        animation: 'sparkFly 1.4s ease-out forwards',
         zIndex: 350,
         pointerEvents: 'none'
       });
@@ -373,7 +372,7 @@ function showFinal() {
       setTimeout(() => sparkle.remove(), 1500);
     }
 
-    // ✨ Текст фидбека
+    // ✨ финальный текст
     const label = document.createElement('div');
     label.textContent = finalText;
     Object.assign(label.style, {
@@ -398,6 +397,7 @@ function showFinal() {
   });
 }
 })();
+
   </script>
 </body>
 </html>
