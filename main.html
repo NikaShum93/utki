@@ -64,8 +64,14 @@
 
   // эти переменные должны быть let, чтобы подменять из JSON
   let finalText = decodeURIComponent(urlParams.get('final') || '🎉 Well Done!');
-  let bubbleImg = decodeURIComponent(urlParams.get('img') || 'https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif');
-  const setCounterIcon = (url)=>{ ... };
+ let bubbleImg = decodeURIComponent(urlParams.get('img') || 'https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif');
+function setCounterIcon(url){
+  try{
+    const el = document.querySelector('#counter .icon');
+    if (el) el.style.backgroundImage = url ? `url(${url})` : 'none';
+  }catch(_){}
+}
+
   const isCustomImg = !!urlParams.get('img');
 
   // задачи из URL (совместимость)
@@ -85,10 +91,25 @@
   const BUBBLE_SIZE = 80;
 
   const counter = document.createElement('div');
+  counter.id = 'counter'; // ← добавили ID, чтобы сработал селектор #counter .icon
   const counterIcon = document.createElement('span'); counterIcon.className='icon';
   const counterTxt  = document.createElement('span'); counterTxt.className='txt';
   counter.appendChild(counterIcon); counter.appendChild(counterTxt);
-  Object.assign(counter.style, { ... });
+Object.assign(counter.style, {
+  position: 'absolute',
+  top: '20px',
+  left: '20px',
+  background: 'linear-gradient(135deg, #f6f9fc, #dff9fb)',
+  padding: '10px 16px',
+  borderRadius: '12px',
+  fontFamily: 'sans-serif',
+  fontSize: '18px',
+  color: '#2d3436',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+  zIndex: 300,
+  pointerEvents: 'none'
+});
+
   root.appendChild(counter);
 
   function refreshCounter(){
@@ -120,28 +141,28 @@
     window.addEventListener('resize', keepInsideOnResize);
   })();
 
-  function getRootSize(){ ... }
-  function keepInsideOnResize(){ ... }
-
-  function spawnAll(){
-    const { width: maxW, height: maxH } = getRootSize();
-    for (let i = 1; i <= Object.keys(TASKS).length; i++) {
-      const el = document.createElement('img');
-      el.src = bubbleImg;
-      ...
-      root.appendChild(el);
-    }
+ function keepInsideOnResize(){
+  const { width: W, height: H } = getRootSize();
+  for (const b of bubbles) {
+    if (!b.el.parentNode) continue;
+    let x = parseFloat(b.el.style.left) || 0;
+    let y = parseFloat(b.el.style.top)  || 0;
+    if (x > W - BUBBLE_SIZE) b.el.style.left = (W - BUBBLE_SIZE) + 'px';
+    if (y > H - BUBBLE_SIZE) b.el.style.top  = (H - BUBBLE_SIZE) + 'px';
   }
+}
 
-  // Корректно вычисляет ширину/высоту контейнера даже при resize
-  function getRootSize() {
-    return {
-      width: root.clientWidth || window.innerWidth,
-      height: root.clientHeight || window.innerHeight
-    };
-  }
+function getRootSize() {
+  return {
+    width:  root.clientWidth  || window.innerWidth,
+    height: root.clientHeight || window.innerHeight
+  };
+}
+ function spawnAll(){
+  const { width: maxW, height: maxH } = getRootSize();
+  const t = Object.keys(TASKS).length;
 
-  for (let i = 1; i <= total; i++) {
+  for (let i = 1; i <= t; i++) {
     const el = document.createElement('img');
     el.src = bubbleImg;
     el.style.opacity = isCustomImg ? '1' : '1';
@@ -155,8 +176,6 @@
       transition: 'transform 0.2s ease'
     });
 
-    // Располагаем утёнка только в пределах контейнера!
-    const { width: maxW, height: maxH } = getRootSize();
     el.style.left = (Math.random() * (maxW - BUBBLE_SIZE)) + 'px';
     el.style.top  = (Math.random() * (maxH - BUBBLE_SIZE)) + 'px';
 
@@ -170,9 +189,10 @@
       popSound.play().catch(() => {});
       el.remove();
       showMessage(i);
-     popped++;
-refreshCounter(); 
+      popped++;
+      refreshCounter(); // ← обновляем HUD
 
+      // sparkles
       const sparkle = document.createElement('div');
       sparkle.textContent = '✨';
       Object.assign(sparkle.style, {
@@ -186,7 +206,8 @@ refreshCounter();
       });
       root.appendChild(sparkle);
       setTimeout(() => sparkle.remove(), 600);
-      // Magic scatter bits
+
+      // bits (у тебя уже вставлено выше — оставляем)
       const rect = el.getBoundingClientRect();
       for(let j=0;j<18;j++){
         const bit = document.createElement('div'); bit.className = 'bit';
@@ -200,31 +221,15 @@ refreshCounter();
       }
     });
 
-    el.addEventListener('mouseenter', () => {
-      bubble.dx *= 0.2;
-      bubble.dy *= 0.2;
-    });
-    el.addEventListener('mouseleave', () => {
-      bubble.dx *= 5;
-      bubble.dy *= 5;
-    });
+    el.addEventListener('mouseenter', () => { bubble.dx *= 0.2; bubble.dy *= 0.2; });
+    el.addEventListener('mouseleave', () => { bubble.dx *= 5;   bubble.dy *= 5; });
 
     root.appendChild(el);
   }
+}
 
-  // Если меняется размер окна/iframe — не даём утятам убегать!
-  window.addEventListener('resize', () => {
-    const { width: W, height: H } = getRootSize();
-    for (const b of bubbles) {
-      if (!b.el.parentNode) continue;
-      let x = parseFloat(b.el.style.left) || 0;
-      let y = parseFloat(b.el.style.top) || 0;
-      if (x > W - BUBBLE_SIZE) b.el.style.left = (W - BUBBLE_SIZE) + 'px';
-      if (y > H - BUBBLE_SIZE) b.el.style.top = (H - BUBBLE_SIZE) + 'px';
-    }
-  });
 
-  function animate() {
+   function animate() {
     const { width: W, height: H } = getRootSize();
     for (const b of bubbles) {
       if (!b.el.parentNode) continue;
@@ -252,7 +257,6 @@ refreshCounter();
     }
     requestAnimationFrame(animate);
   }
-  animate();
 
   function showMessage(id) {
     const msg = document.createElement('div');
