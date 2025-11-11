@@ -188,16 +188,17 @@ function getRootSize() {
     const el = document.createElement('img');
     el.src = bubbleImg;
     el.style.opacity = isCustomImg ? '1' : '1';
-    Object.assign(el.style, {
-      position: 'absolute',
-      width: BUBBLE_SIZE + 'px',
-      height: BUBBLE_SIZE + 'px',
-      pointerEvents: 'auto',
-      cursor: 'pointer',
-      zIndex: 100,
-      transition: 'transform 0.2s ease'
-    });
-
+  Object.assign(el.style, {
+  position: 'absolute',
+  width: BUBBLE_SIZE + 'px',
+  height: 'auto',             // ← сохраняет пропорции
+  aspectRatio: 'auto',        // ← дополнительная страховка
+  pointerEvents: 'auto',
+  cursor: 'pointer',
+  zIndex: 100,
+  transition: 'transform 0.2s ease'
+});
+el.style.objectFit = 'contain';
     el.style.left = (Math.random() * (maxW - BUBBLE_SIZE)) + 'px';
     el.style.top  = (Math.random() * (maxH - BUBBLE_SIZE)) + 'px';
 
