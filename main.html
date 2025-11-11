@@ -10,51 +10,44 @@
       overflow: hidden;
       background: transparent;
     }
-    #bubble-extension {
-      z-index: 999999; /* keep on top in Genially */
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: auto;
-      overflow: hidden;
-      z-index: 1;
-    }
+   #bubble-extension {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: auto; overflow: hidden;
+  z-index: 999999; /* поверх Genially */
+}
+
     @keyframes sparkle {
       0% { opacity: 0; transform: scale(0.5); }
       50% { opacity: 1; transform: scale(1.2); }
       100% { opacity: 0; transform: scale(0.5); }
     }
-    @keyframes confetti {
-      /* HUD counter with icon */
-      /* (keeps your original look; just enabling an icon next to the score) */
-      /* The markup will be: <div id="counter"><span class="icon"></span><span class="txt">…</span></div> */
-      #counter { display: inline-flex; align-items: center; gap: 8px; }
-      #counter .icon {
-        width: 26px; height: 26px;
-        background-size: contain; background-repeat: no-repeat; background-position: center;
-        border-radius: 6px; filter: drop-shadow(0 0 6px rgba(0,0,0,.2));
-      }
-      /* Bits particles (magic scatter) */
-      .bit{
-        position: absolute;
-        width: 6px; height: 6px;
-        pointer-events: none; z-index: 350;
-        background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.7) 40%, rgba(255,255,255,0) 70%);
-        border-radius: 50%;
-        box-shadow: 0 0 6px rgba(255,255,255,.45);
-        animation: scatter .7s ease-out forwards;
-      }
-      @keyframes scatter{
-        from{ opacity:1; transform: translate(0,0) scale(1); }
-        to  { opacity:0; transform: translate(var(--tx), var(--ty)) scale(.4); }
-      }
+   /* HUD counter with icon */
+#counter { display:inline-flex; align-items:center; gap:8px; }
+#counter .icon {
+  width:26px; height:26px;
+  background-size:contain; background-repeat:no-repeat; background-position:center;
+  border-radius:6px; filter:drop-shadow(0 0 6px rgba(0,0,0,.2));
+}
+/* Bits particles (magic scatter) */
+.bit{
+  position:absolute; width:6px; height:6px; pointer-events:none; z-index:350;
+  background:radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.7) 40%, rgba(255,255,255,0) 70%);
+  border-radius:50%; box-shadow:0 0 6px rgba(255,255,255,.45);
+  animation:scatter .7s ease-out forwards;
+}
+@keyframes scatter{
+  from{opacity:1; transform:translate(0,0) scale(1)}
+  to  {opacity:0; transform:translate(var(--tx),var(--ty)) scale(.4)}
+}
 
-      0% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
-      50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
-      100% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
-    }
+@keyframes confetti {
+  0% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
+  100% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+}
+
   </style>
 </head>
 <body>
@@ -64,12 +57,18 @@
 (function(){
   const root = document.getElementById('bubble-extension');
   const urlParams = new URLSearchParams(window.location.search);
-  const finalText = decodeURIComponent(urlParams.get('final') || '🎉 Well Done!');
-  // Гифка-утята всегда вместо пузырей
-  const bubbleImg = decodeURIComponent(urlParams.get('img') || 'https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif');
-const setCounterIcon = (url)=>{ try{ const el = document.querySelector('#counter .icon'); if(el){ el.style.backgroundImage = url ? `url(${url})` : 'none'; } }catch(_){} };
-const isCustomImg = !!urlParams.get('img');
 
+  // поддержка JSON-конфига из редактора
+  const JSON_BASE = "https://nikashum93.github.io/texts/data/";
+  const cfgId = urlParams.get('id');
+
+  // эти переменные должны быть let, чтобы подменять из JSON
+  let finalText = decodeURIComponent(urlParams.get('final') || '🎉 Well Done!');
+  let bubbleImg = decodeURIComponent(urlParams.get('img') || 'https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif');
+  const setCounterIcon = (url)=>{ ... };
+  const isCustomImg = !!urlParams.get('img');
+
+  // задачи из URL (совместимость)
   const TASKS = {};
   for (let [key, value] of urlParams.entries()) {
     if (key.startsWith('task')) {
@@ -78,33 +77,61 @@ const isCustomImg = !!urlParams.get('img');
     }
   }
 
-  const total = Object.keys(TASKS).length;
+  // счётчик и HUD
+  let total = 0;
   let popped = 0;
   let finalUnlocked = false;
   const bubbles = [];
-
   const BUBBLE_SIZE = 80;
 
   const counter = document.createElement('div');
   const counterIcon = document.createElement('span'); counterIcon.className='icon';
-  const counterTxt = document.createElement('span'); counterTxt.className='txt'; counterTxt.innerHTML = `🫧 <strong>0 / ${total}</strong>`;
+  const counterTxt  = document.createElement('span'); counterTxt.className='txt';
   counter.appendChild(counterIcon); counter.appendChild(counterTxt);
-  Object.assign(counter.style, {
-    position: 'absolute',
-    top: '20px',
-    left: '20px',
-    background: 'linear-gradient(135deg, #f6f9fc, #dff9fb)',
-    padding: '10px 16px',
-    borderRadius: '12px',
-    fontFamily: 'sans-serif',
-    fontSize: '18px',
-    color: '#2d3436',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    zIndex: 300,
-    pointerEvents: 'none'
-  });
+  Object.assign(counter.style, { ... });
   root.appendChild(counter);
-  setCounterIcon(bubbleImg);
+
+  function refreshCounter(){
+    total = Object.keys(TASKS).length;
+    setCounterIcon(bubbleImg);
+    counterTxt.innerHTML = `🫧 <strong>${popped} / ${total}</strong>`;
+  }
+
+  // ждем JSON, если есть id, и только потом спавним
+  (async function init(){
+    if (cfgId){
+      try{
+        const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, {cache:'no-store'});
+        const cfg = await res.json();
+        if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
+        if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
+        if (Array.isArray(cfg?.tasks) && cfg.tasks.length){
+          // перезаписываем TASKS из редактора
+          Object.keys(TASKS).forEach(k => delete TASKS[k]);
+          cfg.tasks.forEach((t, i) => { TASKS[i+1] = String(t?.prompt ?? t?.text ?? ''); });
+        }
+      } catch(e) {
+        console.warn('JSON load failed', e);
+      }
+    }
+    refreshCounter();
+    spawnAll();   // ← спавним ПОСЛЕ refreshCounter()
+    animate();
+    window.addEventListener('resize', keepInsideOnResize);
+  })();
+
+  function getRootSize(){ ... }
+  function keepInsideOnResize(){ ... }
+
+  function spawnAll(){
+    const { width: maxW, height: maxH } = getRootSize();
+    for (let i = 1; i <= Object.keys(TASKS).length; i++) {
+      const el = document.createElement('img');
+      el.src = bubbleImg;
+      ...
+      root.appendChild(el);
+    }
+  }
 
   // Корректно вычисляет ширину/высоту контейнера даже при resize
   function getRootSize() {
@@ -143,8 +170,8 @@ const isCustomImg = !!urlParams.get('img');
       popSound.play().catch(() => {});
       el.remove();
       showMessage(i);
-      popped++;
-      const cTxt = counter.querySelector('.txt'); if(cTxt) cTxt.innerHTML = `🫧 <strong>${popped} / ${total}</strong>`;
+     popped++;
+refreshCounter(); 
 
       const sparkle = document.createElement('div');
       sparkle.textContent = '✨';
