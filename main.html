@@ -47,6 +47,27 @@
   50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
   100% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
 }
+@keyframes popUp {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes sparkFly {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + (random() - 0.5) * 200px),
+      calc(-50% + (random() - 0.5) * 200px)
+    ) scale(0.4);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
 
   </style>
 </head>
@@ -208,7 +229,7 @@ function spawnAll(){
     bubbles.push(bubble);
 
     el.addEventListener('click', () => {
-      const popSound = new Audio('https://nikashum93.github.io/quack/pop.mp3?v=2');
+     const popSound = $('#popSound').value.trim() || 'https://nikashum93.github.io/utki/pop.mp3';
       popSound.play().catch(() => {});
       el.remove();
       showMessage(i);
@@ -307,22 +328,76 @@ function spawnAll(){
     root.appendChild(msg);
   }
 
-  function showFinal() {
-    counter.remove();
-    const chest = document.createElement('img');
-    chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
-    Object.assign(chest.style, {
+function showFinal() {
+  counter.remove();
+  const chest = document.createElement('img');
+  chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
+  Object.assign(chest.style, {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%) scale(1)',
+    width: '240px',
+    cursor: 'pointer',
+    zIndex: 300,
+    pointerEvents: 'auto',
+    transition: 'transform 0.4s ease',
+    animation: 'fadeIn 0.8s ease-out'
+  });
+  root.appendChild(chest);
+
+  // При клике сундук открывается и запускается блеск + фидбек
+  chest.addEventListener('click', () => {
+    chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
+    chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
+
+    const openSoundUrl = config?.sounds?.open || 'https://nikashum93.github.io/utki/open.mp3';
+    openSound.play().catch(() => {});
+
+    // 🌟 Создаём блёстки
+    for (let i = 0; i < 40; i++) {
+      const sparkle = document.createElement('div');
+      sparkle.textContent = ['✨', '💫', '🌟', '🔮'][Math.floor(Math.random() * 4)];
+      Object.assign(sparkle.style, {
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        transform: `translate(-50%, -50%) scale(${Math.random() * 0.6 + 0.6})`,
+        fontSize: `${Math.random() * 20 + 10}px`,
+        opacity: '0.8',
+        animation: `sparkFly 1.4s ease-out forwards`,
+        zIndex: 350,
+        pointerEvents: 'none'
+      });
+      root.appendChild(sparkle);
+      setTimeout(() => sparkle.remove(), 1500);
+    }
+
+    // ✨ Текст фидбека
+    const label = document.createElement('div');
+    label.textContent = finalText;
+    Object.assign(label.style, {
       position: 'absolute',
-      top: '50%',
+      top: '30%',
       left: '50%',
-      transform: 'translate(-50%, -50%) scale(1)',
-      width: '240px',
-      cursor: 'pointer',
-      zIndex: 300,
-      pointerEvents: 'auto',
-      transition: 'transform 0.3s ease'
+      transform: 'translate(-50%, -50%) scale(0.7)',
+      fontSize: '32px',
+      fontWeight: 'bold',
+      color: '#fff',
+      padding: '16px 30px',
+      background: 'linear-gradient(135deg, #e67e22, #f1c40f)',
+      borderRadius: '16px',
+      fontFamily: 'Comic Sans MS, sans-serif',
+      boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+      zIndex: 400,
+      pointerEvents: 'none',
+      textShadow: '2px 2px 6px rgba(0,0,0,0.4)',
+      animation: 'popUp 0.7s ease-out forwards'
     });
-    root.appendChild(chest);
+    root.appendChild(label);
+  });
+}
+
 
     chest.addEventListener('click', () => {
       chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
