@@ -397,45 +397,6 @@ function showFinal() {
     root.appendChild(label);
   });
 }
-
-
-       const label = document.createElement('div');
-      label.textContent = finalText;
-      Object.assign(label.style, {
-        position: 'absolute',
-        top: '32%',
-        left: 'calc(50% - 6px)',
-        transform: 'translate(-50%, -50%)',
-        fontSize: '32px',
-        fontWeight: 'bold',
-        color: '#fff',
-        padding: '16px 30px',
-        background: 'linear-gradient(135deg, #e67e22, #f1c40f)',
-        borderRadius: '16px',
-        fontFamily: 'Comic Sans MS, sans-serif',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-        zIndex: 400,
-        pointerEvents: 'none',
-        textShadow: '2px 2px 6px rgba(0,0,0,0.4)'
-      });
-      root.appendChild(label);
-
-      const confetti = document.createElement('div');
-      confetti.textContent = '🎊✨💎🪙';
-      Object.assign(confetti.style, {
-        position: 'absolute',
-        top: '42%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        fontSize: '32px',
-        zIndex: 350,
-        animation: 'confetti 1.2s ease-out forwards',
-        pointerEvents: 'none'
-      });
-      root.appendChild(confetti);
-      setTimeout(() => confetti.remove(), 1200);
-    });
-  }
 })();
   </script>
 </body>
