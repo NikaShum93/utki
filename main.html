@@ -399,14 +399,7 @@ function showFinal() {
 }
 
 
-    chest.addEventListener('click', () => {
-      chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
-      chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
-
-      const openSound = new Audio('https://nikashum93.github.io/bubbles-by-nika-shum/open.mp3');
-      openSound.play().catch(() => {});
-
-      const label = document.createElement('div');
+       const label = document.createElement('div');
       label.textContent = finalText;
       Object.assign(label.style, {
         position: 'absolute',
