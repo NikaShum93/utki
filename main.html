@@ -1,10 +1,11 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Светлячки</title>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 
+  <!-- MathJax для формул -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 
   <style>
     html, body {
@@ -13,65 +14,70 @@
       overflow: hidden;
       background: transparent;
     }
-   #bubble-extension {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  pointer-events: auto; overflow: hidden;
-  z-index: 999999; /* поверх Genially */
-}
+    #bubble-extension {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: auto; overflow: hidden;
+      z-index: 999999;
+    }
 
+    /* HUD counter with icon */
+    #counter { display:inline-flex; align-items:center; gap:8px; }
+    #counter .icon {
+      width:26px; height:26px;
+      background-size:contain; background-repeat:no-repeat; background-position:center;
+      border-radius:6px; filter:drop-shadow(0 0 6px rgba(0,0,0,.2));
+    }
+
+    /* Вспышки от пузырей */
     @keyframes sparkle {
       0% { opacity: 0; transform: scale(0.5); }
       50% { opacity: 1; transform: scale(1.2); }
       100% { opacity: 0; transform: scale(0.5); }
     }
-   /* HUD counter with icon */
-#counter { display:inline-flex; align-items:center; gap:8px; }
-#counter .icon {
-  width:26px; height:26px;
-  background-size:contain; background-repeat:no-repeat; background-position:center;
-  border-radius:6px; filter:drop-shadow(0 0 6px rgba(0,0,0,.2));
-}
-/* Bits particles (magic scatter) */
-.bit{
-  position:absolute; width:6px; height:6px; pointer-events:none; z-index:350;
-  background:radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.7) 40%, rgba(255,255,255,0) 70%);
-  border-radius:50%; box-shadow:0 0 6px rgba(255,255,255,.45);
-  animation:scatter .7s ease-out forwards;
-}
-@keyframes scatter{
-  from{opacity:1; transform:translate(0,0) scale(1)}
-  to  {opacity:0; transform:translate(var(--tx),var(--ty)) scale(.4)}
-}
 
-@keyframes confetti {
-  0% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
-  50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
-  100% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
-}
-@keyframes popUp {
-  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5); }
-  60% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-}
+    .bit{
+      position:absolute; width:6px; height:6px; pointer-events:none; z-index:350;
+      background:radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.7) 40%, rgba(255,255,255,0) 70%);
+      border-radius:50%; box-shadow:0 0 6px rgba(255,255,255,.45);
+      animation:scatter .7s ease-out forwards;
+    }
+    @keyframes scatter{
+      from{opacity:1; transform:translate(0,0) scale(1)}
+      to  {opacity:0; transform:translate(var(--tx),var(--ty)) scale(.4)}
+    }
 
-@keyframes sparkFly {
-  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
-  100% {
-    opacity: 0;
-    transform: translate(
-      calc(-50% + (random() - 0.5) * 200px),
-      calc(-50% + (random() - 0.5) * 200px)
-    ) scale(0.4);
-  }
-}
+    /* Конфетти старое (можно использовать дополнительно) */
+    @keyframes confetti {
+      0% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+      50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
+      100% { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+    }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
+    /* Вылет фидбека */
+    @keyframes popUp {
+      0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5); }
+      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
 
+    /* Разлет блёсток от сундука */
+    @keyframes sparkFly {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+      100% {
+        opacity: 0;
+        transform: translate(
+          calc(-50% + (var(--dx))),
+          calc(-50% + (var(--dy)))
+        ) scale(0.4);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
   </style>
 </head>
 <body>
@@ -82,27 +88,33 @@
   const root = document.getElementById('bubble-extension');
   const urlParams = new URLSearchParams(window.location.search);
 
-  // поддержка JSON-конфига из редактора
+  // Где лежат JSON от редактора
   const JSON_BASE = "https://nikashum93.github.io/texts/data/";
   const cfgId = urlParams.get('id');
-let feedbackImage = '';
-let sounds = {
-  pop:  'https://nikashum93.github.io/utki/pop.mp3',
-  open: 'https://nikashum93.github.io/utki/open.mp3'
-};
-  // эти переменные должны быть let, чтобы подменять из JSON
-  let finalText = decodeURIComponent(urlParams.get('final') || '🎉 Well Done!');
- let bubbleImg = decodeURIComponent(urlParams.get('img') || 'https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif');
-function setCounterIcon(url){
-  try{
-    const el = document.querySelector('#counter .icon');
-    if (el) el.style.backgroundImage = url ? `url(${url})` : 'none';
-  }catch(_){}
-}
+
+  // Конфиг из редактора
+  let feedbackImage = "";
+  let sounds = {
+    pop:  "https://nikashum93.github.io/utki/pop.mp3",
+    open: "https://nikashum93.github.io/utki/open.mp3"
+  };
+  let styleTask = null;
+  let styleFeedback = null;
+
+  // то, что можно переопределять через URL (для совместимости)
+  let finalText = decodeURIComponent(urlParams.get('final') || "🎉 Well Done!");
+  let bubbleImg = decodeURIComponent(urlParams.get('img')   || "https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif");
+
+  function setCounterIcon(url){
+    try{
+      const el = document.querySelector('#counter .icon');
+      if (el) el.style.backgroundImage = url ? `url(${url})` : 'none';
+    }catch(_){}
+  }
 
   const isCustomImg = !!urlParams.get('img');
 
-  // задачи из URL (совместимость)
+  // Задачи (старый формат через URL тоже подхватываем)
   const TASKS = {};
   for (let [key, value] of urlParams.entries()) {
     if (key.startsWith('task')) {
@@ -111,335 +123,315 @@ function setCounterIcon(url){
     }
   }
 
-  // счётчик и HUD
+  // Состояния
   let total = 0;
   let popped = 0;
   let finalUnlocked = false;
   const bubbles = [];
   const BUBBLE_SIZE = 80;
 
+  // HUD-счётчик
   const counter = document.createElement('div');
-  counter.id = 'counter'; // ← добавили ID, чтобы сработал селектор #counter .icon
+  counter.id = 'counter';
   const counterIcon = document.createElement('span'); counterIcon.className='icon';
   const counterTxt  = document.createElement('span'); counterTxt.className='txt';
-  counter.appendChild(counterIcon); counter.appendChild(counterTxt);
-Object.assign(counter.style, {
-  position: 'absolute',
-  top: '20px',
-  left: '20px',
-  background: 'linear-gradient(135deg, #f6f9fc, #dff9fb)',
-  padding: '10px 16px',
-  borderRadius: '12px',
-  fontFamily: 'sans-serif',
-  fontSize: '18px',
-  color: '#2d3436',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-  zIndex: 300,
-  pointerEvents: 'none'
-});
-
+  counter.appendChild(counterIcon);
+  counter.appendChild(counterTxt);
+  Object.assign(counter.style, {
+    position: 'absolute',
+    top: '20px',
+    left: '20px',
+    background: 'linear-gradient(135deg, #f6f9fc, #dff9fb)',
+    padding: '10px 16px',
+    borderRadius: '12px',
+    fontFamily: 'sans-serif',
+    fontSize: '18px',
+    color: '#2d3436',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    zIndex: 300,
+    pointerEvents: 'none'
+  });
   root.appendChild(counter);
 
- function refreshCounter(){
-  total = Object.keys(TASKS).length;
-  setCounterIcon(bubbleImg);
-  counterTxt.innerHTML = `<strong>${popped} / ${total}</strong>`;
-}
+  function refreshCounter(){
+    total = Object.keys(TASKS).length;
+    setCounterIcon(bubbleImg);
+    counterTxt.innerHTML = `<strong>${popped} / ${total}</strong>`;
+  }
 
-  // ждем JSON, если есть id, и только потом спавним
+  // Инициализация: тянем JSON, если есть id
   (async function init(){
     if (cfgId){
       try{
-        const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, {cache:'no-store'});
+        const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, { cache:'no-store' });
         const cfg = await res.json();
+
+        // Картинка светлячков
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
+
+        // Итоговый текст
         if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
+
+        // Картинка фидбека (сундук / что угодно)
         if (cfg?.feedbackImage) feedbackImage = cfg.feedbackImage;
-if (cfg?.sounds?.pop)   sounds.pop  = cfg.sounds.pop;
-if (cfg?.sounds?.open)  sounds.open = cfg.sounds.open;
 
-       if (cfg?.tasks && cfg.tasks.length){
-  // перезаписываем TASKS из редактора
-  Object.keys(TASKS).forEach(k => delete TASKS[k]);
+        // Звуки из редактора
+        if (cfg?.sounds?.pop)  sounds.pop  = cfg.sounds.pop;
+        if (cfg?.sounds?.open) sounds.open = cfg.sounds.open;
 
-  // нормализуем любые варианты: массив строк, массив объектов, одна строка с \n
-  let arr = cfg.tasks;
+        // Стили задания / фидбека
+        if (cfg?.style?.task)     styleTask     = cfg.style.task;
+        if (cfg?.style?.feedback) styleFeedback = cfg.style.feedback;
 
-  // если вдруг пришла одна строка внутри массива — разбиваем по переводам
-  if (arr.length === 1 && typeof arr[0] === 'string') {
-    arr = arr[0].split('\n');
-  }
-
-  // превращаем в чистый массив строк
-  const flat = [];
-  for (const item of arr) {
-    if (typeof item === 'string') {
-      flat.push(...item.split('\n'));
-    } else {
-      flat.push(String(item?.prompt ?? item?.text ?? ''));
-    }
-  }
-
-  flat.map(s => s.trim()).filter(Boolean).forEach((t, i) => {
-    TASKS[i + 1] = t;
-  });
-}
-
-      } catch(e) {
-        console.warn('JSON load failed', e);
+        // Задачи из редактора: tasks: [{ prompt: "..." }]
+        if (cfg?.tasks && cfg.tasks.length){
+          Object.keys(TASKS).forEach(k => delete TASKS[k]);
+          cfg.tasks.forEach((t, i) => {
+            const line = (t && (t.prompt ?? t.q ?? t.text) || "").trim();
+            if (line) TASKS[i + 1] = line;
+          });
+        }
+      }catch(e){
+        console.warn("JSON load failed", e);
       }
     }
+
     refreshCounter();
-    spawnAll();   // ← спавним ПОСЛЕ refreshCounter()
+    spawnAll();
     animate();
     window.addEventListener('resize', keepInsideOnResize);
   })();
 
- function keepInsideOnResize(){
-  const { width: W, height: H } = getRootSize();
-  for (const b of bubbles) {
-    if (!b.el.parentNode) continue;
-    let x = parseFloat(b.el.style.left) || 0;
-    let y = parseFloat(b.el.style.top)  || 0;
-    if (x > W - BUBBLE_SIZE) b.el.style.left = (W - BUBBLE_SIZE) + 'px';
-    if (y > H - BUBBLE_SIZE) b.el.style.top  = (H - BUBBLE_SIZE) + 'px';
+  function getRootSize() {
+    return {
+      width:  root.clientWidth  || window.innerWidth,
+      height: root.clientHeight || window.innerHeight
+    };
   }
-}
 
-function getRootSize() {
-  return {
-    width:  root.clientWidth  || window.innerWidth,
-    height: root.clientHeight || window.innerHeight
-  };
-}
-function spawnAll(){
-  const { width: maxW, height: maxH } = getRootSize();
-  const total = Object.keys(TASKS).length;
+  function keepInsideOnResize(){
+    const { width: W, height: H } = getRootSize();
+    for (const b of bubbles) {
+      if (!b.el.parentNode) continue;
+      let x = parseFloat(b.el.style.left) || 0;
+      let y = parseFloat(b.el.style.top)  || 0;
+      if (x > W - BUBBLE_SIZE) b.el.style.left = (W - BUBBLE_SIZE) + 'px';
+      if (y > H - BUBBLE_SIZE) b.el.style.top  = (H - BUBBLE_SIZE) + 'px';
+    }
+  }
 
-  for (let i = 1; i <= total; i++) {
-    const el = document.createElement('img');
-    el.src = bubbleImg;
-    el.style.opacity = isCustomImg ? '1' : '1';
-    Object.assign(el.style, {
-      position: 'absolute',
-      width: BUBBLE_SIZE + 'px',
-      height: 'auto',
-      objectFit: 'contain',
-      pointerEvents: 'auto',
-      cursor: 'pointer',
-      zIndex: 100,
-      transition: 'transform 0.2s ease'
-    });
+  function spawnAll(){
+    const { width: maxW, height: maxH } = getRootSize();
+    const totalLocal = Object.keys(TASKS).length;
 
-    el.style.left = (Math.random() * (maxW - BUBBLE_SIZE)) + 'px';
-    el.style.top  = (Math.random() * (maxH - BUBBLE_SIZE)) + 'px';
-
-    const dx = (Math.random()*2 - 1) * 1.5;
-    const dy = (Math.random()*2 - 1) * 1.5;
-    const bubble = { el, dx, dy, id: i };
-    bubbles.push(bubble);
-
-    el.addEventListener('click', () => {
-    const pop = new Audio(sounds.pop);
-try { pop.currentTime = 0; pop.play(); } catch(_) {}
-      el.remove();
-      showMessage(i);
-      popped++;
-      refreshCounter();
-
-      // Эффект sparkles
-      const sparkle = document.createElement('div');
-      sparkle.textContent = '✨';
-      Object.assign(sparkle.style, {
+    for (let i = 1; i <= totalLocal; i++) {
+      const el = document.createElement('img');
+      el.src = bubbleImg;
+      el.style.opacity = isCustomImg ? '1' : '1';
+      Object.assign(el.style, {
         position: 'absolute',
-        left: el.style.left,
-        top: el.style.top,
-        fontSize: '18px',
-        zIndex: 150,
-        pointerEvents: 'none',
-        animation: 'sparkle 0.6s ease-out forwards'
+        width: BUBBLE_SIZE + 'px',
+        height: 'auto',
+        objectFit: 'contain',
+        pointerEvents: 'auto',
+        cursor: 'pointer',
+        zIndex: 100,
+        transition: 'transform 0.2s ease'
       });
-      root.appendChild(sparkle);
-      setTimeout(() => sparkle.remove(), 600);
-    });
 
-    el.addEventListener('mouseenter', () => {
-      bubble.dx *= 0.2;
-      bubble.dy *= 0.2;
-    });
-    el.addEventListener('mouseleave', () => {
-      bubble.dx *= 5;
-      bubble.dy *= 5;
-    });
+      el.style.left = (Math.random() * (maxW - BUBBLE_SIZE)) + 'px';
+      el.style.top  = (Math.random() * (maxH - BUBBLE_SIZE)) + 'px';
 
-    root.appendChild(el);
+      const dx = (Math.random()*2 - 1) * 1.5;
+      const dy = (Math.random()*2 - 1) * 1.5;
+      const bubble = { el, dx, dy, id: i };
+      bubbles.push(bubble);
+
+      el.addEventListener('click', () => {
+        const pop = new Audio(sounds.pop);
+        try { pop.currentTime = 0; pop.play(); } catch(_) {}
+
+        el.remove();
+        showMessage(i);
+        popped++;
+        refreshCounter();
+
+        // мини-вспышка
+        const sparkle = document.createElement('div');
+        sparkle.textContent = '✨';
+        Object.assign(sparkle.style, {
+          position: 'absolute',
+          left: el.style.left,
+          top: el.style.top,
+          fontSize: '18px',
+          zIndex: 150,
+          pointerEvents: 'none',
+          animation: 'sparkle 0.6s ease-out forwards'
+        });
+        root.appendChild(sparkle);
+        setTimeout(() => sparkle.remove(), 600);
+      });
+
+      el.addEventListener('mouseenter', () => {
+        bubble.dx *= 0.2;
+        bubble.dy *= 0.2;
+      });
+      el.addEventListener('mouseleave', () => {
+        bubble.dx *= 5;
+        bubble.dy *= 5;
+      });
+
+      root.appendChild(el);
+    }
   }
-  animate(); // ← вызываем после генерации, чтобы сразу ожили
-}
-
 
   function animate() {
-  const { width: W, height: H } = getRootSize();
-  for (const b of bubbles) {
-    if (!b.el.parentNode) continue;
-    let x = parseFloat(b.el.style.left) || 0;
-    let y = parseFloat(b.el.style.top)  || 0;
+    const { width: W, height: H } = getRootSize();
+    for (const b of bubbles) {
+      if (!b.el.parentNode) continue;
+      let x = parseFloat(b.el.style.left) || 0;
+      let y = parseFloat(b.el.style.top)  || 0;
 
-    x += b.dx;
-    y += b.dy;
+      x += b.dx;
+      y += b.dy;
 
-    // Отскоки
-    if (x < 0) { x = 0; b.dx = -b.dx + (Math.random() - 0.5) * 0.4; }
-    if (x > W - BUBBLE_SIZE) { x = W - BUBBLE_SIZE; b.dx = -b.dx + (Math.random() - 0.5) * 0.4; }
-    if (y < 0) { y = 0; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
-    if (y > H - BUBBLE_SIZE) { y = H - BUBBLE_SIZE; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
+      // Отскоки
+      if (x < 0) { x = 0; b.dx = -b.dx + (Math.random() - 0.5) * 0.4; }
+      if (x > W - BUBBLE_SIZE) { x = W - BUBBLE_SIZE; b.dx = -b.dx + (Math.random() - 0.5) * 0.4; }
+      if (y < 0) { y = 0; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
+      if (y > H - BUBBLE_SIZE) { y = H - BUBBLE_SIZE; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
 
-    // Минимальное движение, чтобы не залипали
-    if (Math.abs(b.dx) < 0.3) b.dx += (Math.random() - 0.5) * 0.5;
-    if (Math.abs(b.dy) < 0.3) b.dy += (Math.random() - 0.5) * 0.5;
+      // Чтобы не залипали
+      if (Math.abs(b.dx) < 0.3) b.dx += (Math.random() - 0.5) * 0.5;
+      if (Math.abs(b.dy) < 0.3) b.dy += (Math.random() - 0.5) * 0.5;
 
-    b.dx = Math.max(-1.5, Math.min(1.5, b.dx));
-    b.dy = Math.max(-1.5, Math.min(1.5, b.dy));
+      b.dx = Math.max(-1.5, Math.min(1.5, b.dx));
+      b.dy = Math.max(-1.5, Math.min(1.5, b.dy));
 
-    b.el.style.left = x + 'px';
-    b.el.style.top  = y + 'px';
+      b.el.style.left = x + 'px';
+      b.el.style.top  = y + 'px';
+    }
+    requestAnimationFrame(animate);
   }
-  requestAnimationFrame(animate);
-}
 
- function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  function shuffle(arr){
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
-  return arr;
-}
 
-function showMessage(id) {
-  const raw = TASKS[id] || '';
-  const parts = raw.split('::');
-  const question = (parts[0] || raw).trim();
-  const options = parts.slice(1).map(s => s.trim()).filter(Boolean);
+  // ----------------------
+  // ОКНО ЗАДАНИЯ
+  // Формат строки:
+  // 1) "просто текст" → просто показали, закрыли по клику
+  // 2) "вопрос :: ответ" → режим "вписать ответ"
+  // 3) "вопрос :: вариант1 :: вариант2 :: ..." → квиз, первый вариант = правильный
+  // ----------------------
+  function showMessage(id) {
+    const raw = TASKS[id] || "";
+    const parts = raw.split("::");
+    const question = (parts[0] || raw).trim();
+    const options = parts.slice(1).map(s => s.trim()).filter(Boolean);
 
-  const msg = document.createElement('div');
-  Object.assign(msg.style, {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-    color: 'white',
-    padding: '24px 36px',
-    borderRadius: '20px',
-    fontSize: '22px',
-    fontFamily: 'sans-serif',
-    textAlign: 'center',
-    boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
-    pointerEvents: 'auto',
-    zIndex: 200,
-    maxWidth: '70vw'
-  });
+    const msg = document.createElement('div');
+    Object.assign(msg.style, {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+      color: 'white',
+      padding: '24px 36px',
+      borderRadius: '20px',
+      fontSize: '22px',
+      fontFamily: 'sans-serif',
+      textAlign: 'center',
+      boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+      pointerEvents: 'auto',
+      zIndex: 200,
+      maxWidth: '70vw'
+    });
 
-  // ВОПРОС
-  const q = document.createElement('div');
-  q.className = 'task-question';
-  q.innerHTML = question || `<b>Task ${id}</b>`;
-  q.style.marginBottom = '16px';
-  msg.appendChild(q);
-
-  // Если нет :: или только один кусок → просто показать текст и закрыть по клику (как раньше)
-  if (options.length === 0) {
-    msg.style.cursor = 'pointer';
-    msg.addEventListener('click', () => {
-      msg.remove();
-      if (popped === total && !finalUnlocked) {
-        finalUnlocked = true;
-        showFinal();
+    // применяем стили задания из редактора
+    if (styleTask){
+      if (styleTask.bgColor) {
+        msg.style.background = styleTask.bgColor;
       }
-    });
-  } else if (options.length === 1) {
-    // 📝 РЕЖИМ "ВПИСАТЬ ОТВЕТ"
-    const correct = options[0].toLowerCase();
-
-    const input = document.createElement('input');
-    Object.assign(input.style, {
-      width: '100%',
-      padding: '8px 10px',
-      borderRadius: '10px',
-      border: 'none',
-      marginBottom: '10px',
-      fontSize: '18px'
-    });
-    input.placeholder = 'Впиши ответ...';
-    msg.appendChild(input);
-
-    const btn = document.createElement('button');
-    btn.textContent = 'OK';
-    Object.assign(btn.style, {
-      padding: '8px 18px',
-      borderRadius: '999px',
-      border: 'none',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      cursor: 'pointer',
-      background: '#fff',
-      color: '#0984e3',
-      marginBottom: '8px'
-    });
-    msg.appendChild(btn);
-
-    const fb = document.createElement('div');
-    fb.style.minHeight = '24px';
-    msg.appendChild(fb);
-
-    function checkAnswer() {
-      const value = (input.value || '').trim().toLowerCase();
-      if (!value) return;
-      if (value === correct) {
-        fb.textContent = '✅ Correct!';
-        setTimeout(() => {
-          msg.remove();
-          if (popped === total && !finalUnlocked) {
-            finalUnlocked = true;
-            showFinal();
-          }
-        }, 500);
-      } else {
-        fb.textContent = '❌ Try again';
+      if (styleTask.borderColor) {
+        msg.style.border = '2px solid ' + styleTask.borderColor;
+      }
+      if (typeof styleTask.opacity === 'number') {
+        msg.style.opacity = styleTask.opacity;
+      }
+      if (styleTask.fontSize) {
+        msg.style.fontSize = styleTask.fontSize + 'px';
+      }
+      if (styleTask.neon) {
+        const glow = styleTask.borderColor || '#ffffff';
+        msg.style.boxShadow = `0 0 18px ${glow}`;
       }
     }
 
-    btn.addEventListener('click', checkAnswer);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') checkAnswer();
-    });
-  } else {
-    // ❓ РЕЖИМ QUIZ (есть несколько вариантов)
-    const correct = options[0];
-    const shuffled = shuffle([...options]);
+    // Вопрос
+    const q = document.createElement('div');
+    q.className = 'task-question';
+    q.innerHTML = question || `<b>Task ${id}</b>`;
+    q.style.marginBottom = '16px';
+    msg.appendChild(q);
 
-    const list = document.createElement('div');
-    list.style.display = 'flex';
-    list.style.flexDirection = 'column';
-    list.style.gap = '8px';
-    list.style.marginTop = '8px';
+    if (options.length === 0) {
+      // просто текст → закрываем по клику
+      msg.style.cursor = 'pointer';
+      msg.addEventListener('click', () => {
+        msg.remove();
+        if (popped === total && !finalUnlocked) {
+          finalUnlocked = true;
+          showFinal();
+        }
+      });
+    } else if (options.length === 1) {
+      // 📝 ВПИСАТЬ ОТВЕТ
+      const correct = options[0].toLowerCase();
 
-    shuffled.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.textContent = opt;
-      Object.assign(btn.style, {
+      const input = document.createElement('input');
+      Object.assign(input.style, {
+        width: '100%',
         padding: '8px 10px',
+        borderRadius: '10px',
+        border: 'none',
+        marginBottom: '10px',
+        fontSize: '18px',
+        color: '#2d3436'
+      });
+      input.placeholder = 'Впиши ответ...';
+      msg.appendChild(input);
+
+      const btn = document.createElement('button');
+      btn.textContent = 'OK';
+      Object.assign(btn.style, {
+        padding: '8px 18px',
         borderRadius: '999px',
         border: 'none',
         fontSize: '16px',
+        fontWeight: 'bold',
         cursor: 'pointer',
-        background: 'rgba(255,255,255,0.9)',
-        color: '#2d3436'
+        background: '#fff',
+        color: '#0984e3',
+        marginBottom: '8px'
       });
-      btn.addEventListener('click', () => {
-        if (opt === correct) {
-          btn.style.background = '#00b894';
-          btn.style.color = '#fff';
+      msg.appendChild(btn);
+
+      const fb = document.createElement('div');
+      fb.style.minHeight = '24px';
+      msg.appendChild(fb);
+
+      function checkAnswer() {
+        const value = (input.value || '').trim().toLowerCase();
+        if (!value) return;
+        if (value === correct) {
+          fb.textContent = '✅ Correct!';
           setTimeout(() => {
             msg.remove();
             if (popped === total && !finalUnlocked) {
@@ -448,106 +440,167 @@ function showMessage(id) {
             }
           }, 500);
         } else {
-          btn.style.background = '#d63031';
-          btn.style.color = '#fff';
+          fb.textContent = '❌ Try again';
         }
+      }
+
+      btn.addEventListener('click', checkAnswer);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') checkAnswer();
       });
-      list.appendChild(btn);
-    });
 
-    msg.appendChild(list);
-  }
+    } else {
+      // ❓ КВИЗ: несколько вариантов, первый = правильный
+      const correct = options[0];
+      const shuffled = shuffle([...options]);
 
-  // MathJax для формул в вопросе
-  if (window.MathJax && window.MathJax.typesetPromise) {
-    window.MathJax.typesetPromise([msg]).catch(() => {});
-  }
+      const list = document.createElement('div');
+      list.style.display = 'flex';
+      list.style.flexDirection = 'column';
+      list.style.gap = '8px';
+      list.style.marginTop = '8px';
 
-  root.appendChild(msg);
-}
-
-    // MathJax для формул в тексте задания
-    if (window.MathJax && MathJax.typesetPromise) {
-      MathJax.typesetPromise([msg]).catch(() => {});
-    }
-  }
-
-function showFinal() {
-  counter.remove();
-  const chest = document.createElement('img');
-  chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
-  Object.assign(chest.style, {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%) scale(1)',
-    width: '240px',
-    cursor: 'pointer',
-    zIndex: 300,
-    pointerEvents: 'auto',
-    transition: 'transform 0.4s ease',
-    animation: 'fadeIn 0.8s ease-out'
-  });
-  root.appendChild(chest);
-
-  const openSound = new Audio('https://nikashum93.github.io/utki/open.mp3');
-
-  chest.addEventListener('click', () => {
-    chest.src = 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
-    chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
-    openSound.play().catch(() => {});
-
-    // 🌟 блёстки
-    for (let i = 0; i < 40; i++) {
-      const sparkle = document.createElement('div');
-      sparkle.textContent = ['✨', '💫', '🌟', '🔮'][Math.floor(Math.random() * 4)];
-      Object.assign(sparkle.style, {
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: `translate(-50%, -50%) scale(${Math.random() * 0.6 + 0.6})`,
-        fontSize: `${Math.random() * 20 + 10}px`,
-        opacity: '0.8',
-        animation: 'sparkFly 1.4s ease-out forwards',
-        zIndex: 350,
-        pointerEvents: 'none'
+      shuffled.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        Object.assign(btn.style, {
+          padding: '8px 10px',
+          borderRadius: '999px',
+          border: 'none',
+          fontSize: '16px',
+          cursor: 'pointer',
+          background: 'rgba(255,255,255,0.9)',
+          color: '#2d3436'
+        });
+        btn.addEventListener('click', () => {
+          if (opt === correct) {
+            btn.style.background = '#00b894';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+              msg.remove();
+              if (popped === total && !finalUnlocked) {
+                finalUnlocked = true;
+                showFinal();
+              }
+            }, 500);
+          } else {
+            btn.style.background = '#d63031';
+            btn.style.color = '#fff';
+          }
+        });
+        list.appendChild(btn);
       });
-      root.appendChild(sparkle);
-      setTimeout(() => sparkle.remove(), 1500);
+
+      msg.appendChild(list);
     }
 
-    // ✨ финальный текст
-   const label = document.createElement('div');
-    label.innerHTML = finalText;
-    Object.assign(label.style, {
+    // MathJax для вопроса/вариантов
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([msg]).catch(() => {});
+    }
+
+    root.appendChild(msg);
+  }
+
+  // ----------------------
+  // ФИНАЛЬНЫЙ ФИДБЕК (сундук / своя картинка)
+  // ----------------------
+  function showFinal() {
+    try { counter.remove(); } catch(_){}
+
+    const chest = document.createElement('img');
+    chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
+    Object.assign(chest.style, {
       position: 'absolute',
-      top: '30%',
+      top: '50%',
       left: '50%',
-      transform: 'translate(-50%, -50%) scale(0.7)',
-      fontSize: '32px',
-      fontWeight: 'bold',
-      color: '#fff',
-      padding: '16px 30px',
-      background: 'linear-gradient(135deg, #e67e22, #f1c40f)',
-      borderRadius: '16px',
-      fontFamily: 'Comic Sans MS, sans-serif',
-      boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-      zIndex: 400,
-      pointerEvents: 'none',
-      textShadow: '2px 2px 6px rgba(0,0,0,0.4)',
-      animation: 'popUp 0.7s ease-out forwards'
+      transform: 'translate(-50%, -50%) scale(1)',
+      width: '240px',
+      cursor: 'pointer',
+      zIndex: 300,
+      pointerEvents: 'auto',
+      transition: 'transform 0.4s ease',
+      animation: 'fadeIn 0.8s ease-out'
     });
-    root.appendChild(label);
+    root.appendChild(chest);
 
-    // MathJax для финального текста
-    if (window.MathJax && MathJax.typesetPromise) {
-      MathJax.typesetPromise([label]).catch(() => {});
-    }
-  });
-}
+    const openSound = new Audio(sounds.open);
+
+    chest.addEventListener('click', () => {
+      chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/d76550fd-2622-441f-bbf2-faee6906772e.png';
+      chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      openSound.play().catch(() => {});
+
+      // Блёстки
+      for (let i = 0; i < 40; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.textContent = ['✨', '💫', '🌟', '🔮'][Math.floor(Math.random() * 4)];
+        const dx = (Math.random() - 0.5) * 220;
+        const dy = (Math.random() - 0.5) * 220;
+        sparkle.style.setProperty('--dx', dx + 'px');
+        sparkle.style.setProperty('--dy', dy + 'px');
+
+        Object.assign(sparkle.style, {
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: `translate(-50%, -50%) scale(${Math.random() * 0.6 + 0.6})`,
+          fontSize: `${Math.random() * 20 + 10}px`,
+          opacity: '0.8',
+          animation: 'sparkFly 1.4s ease-out forwards',
+          zIndex: 350,
+          pointerEvents: 'none'
+        });
+        root.appendChild(sparkle);
+        setTimeout(() => sparkle.remove(), 1500);
+      }
+
+      // Текст фидбека
+      const label = document.createElement('div');
+      label.innerHTML = finalText || '🎉 Well done!';
+      Object.assign(label.style, {
+        position: 'absolute',
+        top: '30%',
+        left: '50%',
+        transform: 'translate(-50%, -50%) scale(0.7)',
+        fontSize: '32px',
+        fontWeight: 'bold',
+        color: '#fff',
+        padding: '16px 30px',
+        background: 'linear-gradient(135deg, #e67e22, #f1c40f)',
+        borderRadius: '16px',
+        fontFamily: 'Comic Sans MS, sans-serif',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+        zIndex: 400,
+        pointerEvents: 'none',
+        textShadow: '2px 2px 6px rgba(0,0,0,0.4)',
+        animation: 'popUp 0.7s ease-out forwards'
+      });
+
+      // применяем стили фидбека из редактора
+      if (styleFeedback){
+        if (styleFeedback.borderColor) {
+          label.style.border = '2px solid ' + styleFeedback.borderColor;
+        }
+        if (styleFeedback.textColor) {
+          label.style.color = styleFeedback.textColor;
+        }
+        if (styleFeedback.neon) {
+          const glow = styleFeedback.borderColor || '#ffffff';
+          label.style.boxShadow = `0 0 20px ${glow}`;
+        }
+      }
+
+      root.appendChild(label);
+
+      // MathJax для финального текста
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([label]).catch(() => {});
+      }
+    });
+  }
 
 })();
-
   </script>
 </body>
 </html>
