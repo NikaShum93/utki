@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Светлячки</title>
-    <script id="MathJax-script" async
-          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
 
   <style>
     html, body {
@@ -308,26 +307,49 @@ try { pop.currentTime = 0; pop.play(); } catch(_) {}
   requestAnimationFrame(animate);
 }
 
-  function showMessage(id) {
-    const msg = document.createElement('div');
-    msg.innerHTML = TASKS[id] || `<b>Task ${id}</b>`;
-    Object.assign(msg.style, {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-      color: 'white',
-      padding: '24px 36px',
-      borderRadius: '20px',
-      fontSize: '22px',
-      fontFamily: 'sans-serif',
-      textAlign: 'center',
-      boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
-      pointerEvents: 'auto',
-      cursor: 'pointer',
-      zIndex: 200
-    });
+ function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showMessage(id) {
+  const raw = TASKS[id] || '';
+  const parts = raw.split('::');
+  const question = (parts[0] || raw).trim();
+  const options = parts.slice(1).map(s => s.trim()).filter(Boolean);
+
+  const msg = document.createElement('div');
+  Object.assign(msg.style, {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+    color: 'white',
+    padding: '24px 36px',
+    borderRadius: '20px',
+    fontSize: '22px',
+    fontFamily: 'sans-serif',
+    textAlign: 'center',
+    boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+    pointerEvents: 'auto',
+    zIndex: 200,
+    maxWidth: '70vw'
+  });
+
+  // ВОПРОС
+  const q = document.createElement('div');
+  q.className = 'task-question';
+  q.innerHTML = question || `<b>Task ${id}</b>`;
+  q.style.marginBottom = '16px';
+  msg.appendChild(q);
+
+  // Если нет :: или только один кусок → просто показать текст и закрыть по клику (как раньше)
+  if (options.length === 0) {
+    msg.style.cursor = 'pointer';
     msg.addEventListener('click', () => {
       msg.remove();
       if (popped === total && !finalUnlocked) {
@@ -335,8 +357,114 @@ try { pop.currentTime = 0; pop.play(); } catch(_) {}
         showFinal();
       }
     });
+  } else if (options.length === 1) {
+    // 📝 РЕЖИМ "ВПИСАТЬ ОТВЕТ"
+    const correct = options[0].toLowerCase();
 
-    root.appendChild(msg);
+    const input = document.createElement('input');
+    Object.assign(input.style, {
+      width: '100%',
+      padding: '8px 10px',
+      borderRadius: '10px',
+      border: 'none',
+      marginBottom: '10px',
+      fontSize: '18px'
+    });
+    input.placeholder = 'Впиши ответ...';
+    msg.appendChild(input);
+
+    const btn = document.createElement('button');
+    btn.textContent = 'OK';
+    Object.assign(btn.style, {
+      padding: '8px 18px',
+      borderRadius: '999px',
+      border: 'none',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      background: '#fff',
+      color: '#0984e3',
+      marginBottom: '8px'
+    });
+    msg.appendChild(btn);
+
+    const fb = document.createElement('div');
+    fb.style.minHeight = '24px';
+    msg.appendChild(fb);
+
+    function checkAnswer() {
+      const value = (input.value || '').trim().toLowerCase();
+      if (!value) return;
+      if (value === correct) {
+        fb.textContent = '✅ Correct!';
+        setTimeout(() => {
+          msg.remove();
+          if (popped === total && !finalUnlocked) {
+            finalUnlocked = true;
+            showFinal();
+          }
+        }, 500);
+      } else {
+        fb.textContent = '❌ Try again';
+      }
+    }
+
+    btn.addEventListener('click', checkAnswer);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+  } else {
+    // ❓ РЕЖИМ QUIZ (есть несколько вариантов)
+    const correct = options[0];
+    const shuffled = shuffle([...options]);
+
+    const list = document.createElement('div');
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = '8px';
+    list.style.marginTop = '8px';
+
+    shuffled.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.textContent = opt;
+      Object.assign(btn.style, {
+        padding: '8px 10px',
+        borderRadius: '999px',
+        border: 'none',
+        fontSize: '16px',
+        cursor: 'pointer',
+        background: 'rgba(255,255,255,0.9)',
+        color: '#2d3436'
+      });
+      btn.addEventListener('click', () => {
+        if (opt === correct) {
+          btn.style.background = '#00b894';
+          btn.style.color = '#fff';
+          setTimeout(() => {
+            msg.remove();
+            if (popped === total && !finalUnlocked) {
+              finalUnlocked = true;
+              showFinal();
+            }
+          }, 500);
+        } else {
+          btn.style.background = '#d63031';
+          btn.style.color = '#fff';
+        }
+      });
+      list.appendChild(btn);
+    });
+
+    msg.appendChild(list);
+  }
+
+  // MathJax для формул в вопросе
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetPromise([msg]).catch(() => {});
+  }
+
+  root.appendChild(msg);
+}
 
     // MathJax для формул в тексте задания
     if (window.MathJax && MathJax.typesetPromise) {
