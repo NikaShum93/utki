@@ -304,13 +304,14 @@ async function uploadFile(file) {
       return `${slug}-${stamp}`;
     }
 
-    function quickTest(){
-     const cfg = await collectConfig();
+       async function quickTest(){
+      const cfg = await collectConfig();
       const err = validate(cfg);
       if(err){ alert(err); return; }
       alert('JSON валиден. Заданий: ' + cfg.tasks.length);
       console.log(cfg);
     }
+
 
     function copyIframe(){
       const v = $('#iframeOut').value.trim();
@@ -322,7 +323,8 @@ async function uploadFile(file) {
     function refreshPreview(){
       const url = $('#bgImage').value.trim();
       $('#iconPrev').style.backgroundImage = url ? `url(${url})` : 'none';
-      const lines = $('#tasks').value.split('\\n').filter(Boolean).length;
+           const lines = $('#tasks').value.split('\n').filter(Boolean).length;
+
       $('#textPrev').textContent = (0) + ' / ' + (lines || 0);
     }
 
