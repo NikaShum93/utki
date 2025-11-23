@@ -84,7 +84,6 @@
 
 <h2 style="margin-top:14px">🎯 Задания (по одному на строке)</h2>
 <textarea id="tasks" placeholder="Task 1&#10;Task 2&#10;Task 3"></textarea>
-<textarea id="tasks" placeholder="Task 1&#10;Task 2&#10;Task 3"></textarea>
 
 <h2 style="margin-top:14px">🎨 Оформление задания</h2>
 
@@ -186,7 +185,7 @@
       document.body.style.fontFamily = fontName + ', system-ui, sans-serif';
     }
 
-   function collectConfig(){
+  async function collectConfig(){
   const lang = $('#language').value;
   const font = $('#font').value;
   const bgImage = $('#bgImage').value.trim();
@@ -262,7 +261,7 @@ async function uploadFile(file) {
 }
 
     async function publish(){
-      const cfg = collectConfig();
+     const cfg = await collectConfig();
       const err = validate(cfg);
       if(err){ alert(err); return; }
 
@@ -306,7 +305,7 @@ async function uploadFile(file) {
     }
 
     function quickTest(){
-      const cfg = collectConfig();
+     const cfg = await collectConfig();
       const err = validate(cfg);
       if(err){ alert(err); return; }
       alert('JSON валиден. Заданий: ' + cfg.tasks.length);
