@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Пузырики-утята</title>
+  <title>Светлячки</title>
+    <script id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
   <style>
     html, body {
       margin: 0;
@@ -82,7 +86,11 @@
   // поддержка JSON-конфига из редактора
   const JSON_BASE = "https://nikashum93.github.io/texts/data/";
   const cfgId = urlParams.get('id');
-
+let feedbackImage = '';
+let sounds = {
+  pop:  'https://nikashum93.github.io/utki/pop.mp3',
+  open: 'https://nikashum93.github.io/utki/open.mp3'
+};
   // эти переменные должны быть let, чтобы подменять из JSON
   let finalText = decodeURIComponent(urlParams.get('final') || '🎉 Well Done!');
  let bubbleImg = decodeURIComponent(urlParams.get('img') || 'https://media.tenor.com/_-Y9OYD_cWwAAAAi/duck-bwong.gif');
@@ -147,6 +155,10 @@ Object.assign(counter.style, {
         const cfg = await res.json();
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
         if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
+        if (cfg?.feedbackImage) feedbackImage = cfg.feedbackImage;
+if (cfg?.sounds?.pop)   sounds.pop  = cfg.sounds.pop;
+if (cfg?.sounds?.open)  sounds.open = cfg.sounds.open;
+
        if (cfg?.tasks && cfg.tasks.length){
   // перезаписываем TASKS из редактора
   Object.keys(TASKS).forEach(k => delete TASKS[k]);
@@ -229,8 +241,8 @@ function spawnAll(){
     bubbles.push(bubble);
 
     el.addEventListener('click', () => {
-     const popSound = $('#popSound').value.trim() || 'https://nikashum93.github.io/utki/pop.mp3';
-      popSound.play().catch(() => {});
+    const pop = new Audio(sounds.pop);
+try { pop.currentTime = 0; pop.play(); } catch(_) {}
       el.remove();
       showMessage(i);
       popped++;
@@ -316,7 +328,6 @@ function spawnAll(){
       cursor: 'pointer',
       zIndex: 200
     });
-
     msg.addEventListener('click', () => {
       msg.remove();
       if (popped === total && !finalUnlocked) {
@@ -326,6 +337,11 @@ function spawnAll(){
     });
 
     root.appendChild(msg);
+
+    // MathJax для формул в тексте задания
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([msg]).catch(() => {});
+    }
   }
 
 function showFinal() {
@@ -373,8 +389,8 @@ function showFinal() {
     }
 
     // ✨ финальный текст
-    const label = document.createElement('div');
-    label.textContent = finalText;
+   const label = document.createElement('div');
+    label.innerHTML = finalText;
     Object.assign(label.style, {
       position: 'absolute',
       top: '30%',
@@ -394,8 +410,14 @@ function showFinal() {
       animation: 'popUp 0.7s ease-out forwards'
     });
     root.appendChild(label);
+
+    // MathJax для финального текста
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([label]).catch(() => {});
+    }
   });
 }
+
 })();
 
   </script>
