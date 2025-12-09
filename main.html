@@ -183,14 +183,47 @@
         if (cfg?.style?.task)     styleTask     = cfg.style.task;
         if (cfg?.style?.feedback) styleFeedback = cfg.style.feedback;
 
-        // Задачи из редактора: tasks: [{ prompt: "..." }]
+               // Задачи из редактора: tasks: [{ question, correct:[], wrong:[] }]
         if (cfg?.tasks && cfg.tasks.length){
+          // очищаем старые TASKS (заданные через URL)
           Object.keys(TASKS).forEach(k => delete TASKS[k]);
+
           cfg.tasks.forEach((t, i) => {
-            const line = (t && (t.prompt ?? t.q ?? t.text) || "").trim();
-            if (line) TASKS[i + 1] = line;
+            if (!t) return;
+
+            const q       = (t.question || "").trim();
+            const correct = Array.isArray(t.correct) ? t.correct : [];
+            const wrong   = Array.isArray(t.wrong)   ? t.wrong   : [];
+
+            // формируем строку в формате движка:
+            // 1) просто текст        → "текст"
+            // 2) вписать ответ       → "вопрос :: правильный"
+            // 3) квиз                → "вопрос :: правильный :: неверный1 :: неверный2..."
+            const parts = [];
+
+            if (q) parts.push(q);
+
+            if (correct.length) {
+              // первый правильный — главный ответ
+              parts.push(correct[0]);
+              // остальные правильные тоже можно добавить как варианты
+              for (let j = 1; j < correct.length; j++) {
+                parts.push(correct[j]);
+              }
+            }
+
+            wrong.forEach(w => {
+              const s = (w || "").trim();
+              if (s) parts.push(s);
+            });
+
+            const line = parts.join(" :: ").trim();
+            if (line) {
+              TASKS[i + 1] = line;
+            }
           });
         }
+
       }catch(e){
         console.warn("JSON load failed", e);
       }
