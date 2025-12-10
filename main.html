@@ -589,17 +589,18 @@
       }
 
       // Текст фидбека
-      const label = document.createElement('div');
+          const label = document.createElement('div');
       label.innerHTML = finalText || '🎉 Well done!';
       Object.assign(label.style, {
         position: 'absolute',
-        top: '30%',
+        // поднимаем текст выше, чтобы не закрывал картинку
+        top: '18%',
         left: '50%',
-        transform: 'translate(-50%, -50%) scale(0.7)',
-        fontSize: '32px',
+        transform: 'translate(-50%, -50%) scale(0.85)',
+        fontSize: '28px',
         fontWeight: 'bold',
         color: '#fff',
-        padding: '16px 30px',
+        padding: '14px 26px',
         background: 'linear-gradient(135deg, #e67e22, #f1c40f)',
         borderRadius: '16px',
         fontFamily: 'Comic Sans MS, sans-serif',
@@ -607,7 +608,8 @@
         zIndex: 400,
         pointerEvents: 'none',
         textShadow: '2px 2px 6px rgba(0,0,0,0.4)',
-        animation: 'popUp 0.7s ease-out forwards'
+        animation: 'popUp 0.7s ease-out forwards',
+        maxWidth: '70vw'
       });
 
       // применяем стили фидбека из редактора
