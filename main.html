@@ -762,66 +762,81 @@ width: '100%',
       flexWrap: 'wrap'
     });
 
-     const resetBtn = document.createElement('button');
-    resetBtn.className = 'kgb-btn';
-    resetBtn.textContent = t('reset');
+   const resetBtn = document.createElement('button');
+resetBtn.className = 'kgb-btn';
+resetBtn.textContent = t('reset');
+Object.assign(resetBtn.style, {
+  padding: '10px 18px',
+  borderRadius: '999px',
+  border: 'none',
+  cursor: 'pointer',
+  background: 'rgba(0,0,0,0.25)',
+  color: 'inherit',
+  fontWeight: '800',
+  fontSize: 'inherit',
+  transition: 'transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease',
+});
+resetBtn.addEventListener('mouseenter', () => {
+  resetBtn.style.transform = 'translateY(-2px)';
+  resetBtn.style.boxShadow = '0 10px 22px rgba(0,0,0,0.35)';
+  resetBtn.style.filter = 'brightness(1.05)';
+});
+resetBtn.addEventListener('mouseleave', () => {
+  resetBtn.style.transform = 'translateY(0)';
+  resetBtn.style.boxShadow = '';
+  resetBtn.style.filter = '';
+});
+resetBtn.addEventListener('click', () => {
+  chipsWrap.innerHTML = '';
+  shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
+  fb.textContent = '';
+});
 
-      padding: '10px 18px',
-      borderRadius: '999px',
-      border: 'none',
-      cursor: 'pointer',
-      background: 'rgba(0,0,0,0.25)',
-      color: 'inherit',
-      fontWeight: '800',
-      fontSize: 'inherit'
-    });
+const doneBtn = document.createElement('button');
+doneBtn.className = 'kgb-btn';
+doneBtn.textContent = t('done');
+Object.assign(doneBtn.style, {
+  padding: '10px 22px',
+  borderRadius: '999px',
+  border: 'none',
+  cursor: 'pointer',
+  background: 'rgba(255,255,255,0.95)',
+  color: '#2d3436',
+  fontWeight: '900',
+  fontSize: 'inherit',
+  transition: 'transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease',
+});
+doneBtn.addEventListener('mouseenter', () => {
+  doneBtn.style.transform = 'translateY(-2px)';
+  doneBtn.style.boxShadow = '0 10px 22px rgba(0,0,0,0.35)';
+  doneBtn.style.filter = 'brightness(1.05)';
+});
+doneBtn.addEventListener('mouseleave', () => {
+  doneBtn.style.transform = 'translateY(0)';
+  doneBtn.style.boxShadow = '';
+  doneBtn.style.filter = '';
+});
 
-        const doneBtn = document.createElement('button');
-    doneBtn.className = 'kgb-btn';
-    doneBtn.textContent = t('done');
+doneBtn.addEventListener('click', () => {
+  const got = normSpaces(currentAnswer());
+  const want = normSpaces(target);
+  if (!got) { fb.textContent = ''; return; }
 
-    Object.assign(doneBtn.style, {
-      padding: '10px 22px',
-      borderRadius: '999px',
-      border: 'none',
-      cursor: 'pointer',
-      background: 'rgba(255,255,255,0.95)',
-      color: '#2d3436',
-      fontWeight: '900',
-      fontSize: 'inherit'
-    });
+  if (got === want) {
+    fb.textContent = t('correct');
+    launchFirework(msg);
+    setTimeout(() => {
+      msg.remove();
+      onDone && onDone();
+    }, 450);
+  } else {
+    fb.textContent = t('wrong');
+  }
+});
 
-    resetBtn.addEventListener('click', () => {
-      chipsWrap.innerHTML = '';
-      shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
-      fb.textContent = '';
-    });
+controls.appendChild(resetBtn);
+controls.appendChild(doneBtn);
 
-    function currentAnswer(){
-      const toks = Array.from(chipsWrap.children).map(el => el.textContent);
-      return joinTokens(toks);
-    }
-
-    doneBtn.addEventListener('click', () => {
-      const got = normSpaces(currentAnswer());
-      const want = normSpaces(target);
-      if (!got) { fb.textContent = ''; return; }
-
-         if (got === want){
-        fb.textContent = t('correct');
-        launchFirework(msg);
-        setTimeout(() => {
-          msg.remove();
-          onDone && onDone();
-        }, 450);
-      } else {
-        fb.textContent = t('wrong');
-      }
-
-    });
-
-    controls.appendChild(resetBtn);
-    controls.appendChild(doneBtn);
 
     msg.appendChild(chipsWrap);
     msg.appendChild(controls);
