@@ -56,31 +56,28 @@
     }
 
     /* Вылет фидбека */
-/* Вылет фидбека */
-@keyframes popUp {
-  0%   { opacity: 0; transform: scale(0.7); }
-  60%  { opacity: 1; transform: scale(1.08); }
-  100% { opacity: 1; transform: scale(1); }
-}
+    @keyframes popUp {
+      0%   { opacity: 0; transform: scale(0.7); }
+      60%  { opacity: 1; transform: scale(1.08); }
+      100% { opacity: 1; transform: scale(1); }
+    }
 
-/* Разлет блёсток от сундука */
-@keyframes sparkFly {
-  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
-  100% {
-    opacity: 0;
-    transform: translate(
-      calc(-50% + (var(--dx))),
-      calc(-50% + (var(--dy)))
-    ) scale(0.4);
-  }
-}
+    /* Разлет блёсток от сундука */
+    @keyframes sparkFly {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+      100% {
+        opacity: 0;
+        transform: translate(
+          calc(-50% + (var(--dx))),
+          calc(-50% + (var(--dy)))
+        ) scale(0.4);
+      }
+    }
 
-
-   @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.85); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
 
     @keyframes shake {
       0%,100%{ transform:translate(-50%,-50%) translateX(0); }
@@ -131,7 +128,6 @@
       z-index:9999;
       filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));
     }
-
   </style>
 
 </head>
@@ -204,30 +200,30 @@
   let pendingBubbleId = null;
 
   // HUD-счётчик
- const counter = document.createElement('div');
-counter.id = 'counter';
+  const counter = document.createElement('div');
+  counter.id = 'counter';
 
-Object.assign(counter.style, {
-  position: 'absolute',
-  top: '16px',
-  left: '16px',
-  padding: '8px 14px',
-  borderRadius: '14px',
-  background: 'rgba(0,0,0,0.55)',   // ← ВОТ ЭТОГО НЕ ХВАТАЛО
-  color: '#fff',
-  fontWeight: '900',
-  zIndex: 500,
-  backdropFilter: 'blur(6px)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px'
-});
+  Object.assign(counter.style, {
+    position: 'absolute',
+    top: '16px',
+    left: '16px',
+    padding: '8px 14px',
+    borderRadius: '14px',
+    background: 'rgba(0,0,0,0.55)',
+    color: '#fff',
+    fontWeight: '900',
+    zIndex: 500,
+    backdropFilter: 'blur(6px)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px'
+  });
 
   const counterIcon = document.createElement('span'); counterIcon.className='icon';
   const counterTxt  = document.createElement('span'); counterTxt.className='txt';
   counter.appendChild(counterIcon);
   counter.appendChild(counterTxt);
-       root.appendChild(counter);
+  root.appendChild(counter);
 
   function refreshCounter(){
     total = Object.keys(TASKS).length;
@@ -273,7 +269,6 @@ Object.assign(counter.style, {
   }
 
   function finishCurrentTask(){
-    // Считаем выполненным только ПОСЛЕ выполнения/Done
     if (pendingBubbleEl && pendingBubbleEl.parentNode) pendingBubbleEl.remove();
 
     popped++;
@@ -324,7 +319,6 @@ Object.assign(counter.style, {
 
         if (cfg?.orderMode === true || cfg?.mode === 'order') orderMode = true;
 
-        // ✅ lockNext из редактора теперь = "block while task open"
         if (cfg?.lockNext === false) lockNext = false;
 
         if (cfg?.tasks && cfg.tasks.length){
@@ -435,25 +429,19 @@ Object.assign(counter.style, {
       bubbles.push(bubble);
 
       el.addEventListener('click', () => {
-        // ✅ нужное поведение:
-        // если задание открыто и lockNext включён → блокируем любые новые клики
         if (lockNext && taskOpen) { denyClickFeedback(); return; }
 
-        // звук лопания
         const pop = new Audio(sounds.pop);
         try { pop.currentTime = 0; pop.play(); } catch(_) {}
 
-        // НЕ считаем popped здесь. Сначала надо выполнить задание.
         taskOpen = true;
         pendingBubbleEl = el;
         pendingBubbleId = i;
 
-        // делаем «в процессе», но не удаляем до выполнения
         el.style.pointerEvents = 'none';
         el.style.opacity = '0.35';
         el.style.filter = 'grayscale(1)';
 
-        // мини-вспышка
         const sparkle = document.createElement('div');
         sparkle.textContent = '✨';
         Object.assign(sparkle.style, {
@@ -499,13 +487,11 @@ Object.assign(counter.style, {
       if (y < 0) { y = 0; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
       if (y > H - BUBBLE_SIZE) { y = H - BUBBLE_SIZE; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
 
-    if (Math.abs(b.dx) < 0.18) b.dx += (Math.random() - 0.5) * 0.18;
-if (Math.abs(b.dy) < 0.18) b.dy += (Math.random() - 0.5) * 0.18;
+      if (Math.abs(b.dx) < 0.18) b.dx += (Math.random() - 0.5) * 0.18;
+      if (Math.abs(b.dy) < 0.18) b.dy += (Math.random() - 0.5) * 0.18;
 
-
-     b.dx = Math.max(-0.9, Math.min(0.9, b.dx));
-b.dy = Math.max(-0.9, Math.min(0.9, b.dy));
-
+      b.dx = Math.max(-0.9, Math.min(0.9, b.dx));
+      b.dy = Math.max(-0.9, Math.min(0.9, b.dy));
 
       b.el.style.left = x + 'px';
       b.el.style.top  = y + 'px';
@@ -520,9 +506,7 @@ b.dy = Math.max(-0.9, Math.min(0.9, b.dy));
     }
     return arr;
   }
-  // ----------------------
-  // FIREWORK (correct)
-  // ----------------------
+
   function launchFirework(anchorEl){
     const r = (anchorEl?.getBoundingClientRect ? anchorEl.getBoundingClientRect() : null);
     const cx = r ? (r.left + r.width/2) : (window.innerWidth/2);
@@ -624,52 +608,48 @@ b.dy = Math.max(-0.9, Math.min(0.9, b.dy));
     return msg;
   }
 
-// ----------------------
-// ORDER MODE — Wordwall-style: одна строка слов, перетаскивание МЕЖДУ СОБОЙ
-// ----------------------
   // ----------------------
-  // ORDER MODE — перетаскивание слов как в wordwall
+  // ORDER MODE — перетаскивание слов как в wordwall (КОМПАКТНО + МАКСИМУМ ШИРИНЫ)
   // ----------------------
   function showOrderSentence(sentence, onDone){
     const originalTokens = tokenizeSentence(sentence);
     const target = joinTokens(originalTokens);
 
     const msg = makeTaskCardBase();
-       msg.style.textAlign = 'center';
+    msg.style.textAlign = 'center';
 
-   msg.style.width = 'auto';
-msg.style.maxWidth = '92vw';
-msg.style.minWidth = '60vw';   // ← ВАЖНО
+    msg.style.width = 'auto';
+    msg.style.maxWidth = '94vw';
+    msg.style.minWidth = '0';
 
+    msg.style.paddingLeft = '18px';
+    msg.style.paddingRight = '18px';
+    msg.style.paddingTop = '16px';
+    msg.style.paddingBottom = '16px';
 
-    // визуальные отступы внутри
-    msg.style.paddingLeft = '22px';
-    msg.style.paddingRight = '22px';
-
-    msg.style.display = 'flex';
-    msg.style.flexDirection = 'column';
+    msg.style.display = 'grid';
+    msg.style.gridTemplateColumns = '1fr auto';
     msg.style.alignItems = 'center';
-    msg.style.gap = '14px';
+    msg.style.gap = '12px';
     msg.style.overflow = 'visible';
 
-
-
-    // зона с фишками
-   const chipsWrap = document.createElement('div');
-Object.assign(chipsWrap.style, {
-  display: 'flex',
- flexWrap: 'wrap',
-justifyContent: 'center',
-alignContent: 'center',
-width: '100%',
-  alignItems: 'center',
-  gap: '10px',
-  padding: '12px 10px',
-  borderRadius: '16px',
-  background: 'rgba(0,0,0,0.18)',
-  maxWidth: '100%',
-  boxSizing: 'border-box'
-});
+    const chipsWrap = document.createElement('div');
+    Object.assign(chipsWrap.style, {
+      display: 'flex',
+      flexWrap: 'nowrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '10px 10px',
+      borderRadius: '16px',
+      background: 'rgba(0,0,0,0.18)',
+      width: '100%',
+      maxWidth: '100%',
+      boxSizing: 'border-box',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      WebkitOverflowScrolling: 'touch'
+    });
 
     let dragSrcIndex = null;
 
@@ -747,88 +727,88 @@ width: '100%',
       return chip;
     }
 
-    // стартовое перемешивание
     const shuffled = shuffle([...originalTokens]);
     shuffled.forEach(tok => chipsWrap.appendChild(makeChip(tok)));
 
-    const fb = document.createElement('div');
-    fb.style.minHeight = '28px';
-    fb.style.fontWeight = '800';
-    fb.style.marginTop = '6px';
-
-    const controls = document.createElement('div');
-    Object.assign(controls.style, {
+    const controlsCol = document.createElement('div');
+    Object.assign(controlsCol.style, {
       display: 'flex',
-      gap: '10px',
-      justifyContent: 'center',
-      marginTop: '6px',
-      flexWrap: 'wrap'
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '8px',
+      flex: '0 0 auto'
     });
 
- 
-const resetBtn = document.createElement('button');
-resetBtn.className = 'kgb-btn';
-resetBtn.textContent = t('reset');
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'kgb-btn';
+    resetBtn.textContent = t('reset');
+    Object.assign(resetBtn.style, {
+      padding: '10px 18px',
+      borderRadius: '999px',
+      border: 'none',
+      cursor: 'pointer',
+      background: 'rgba(0,0,0,0.25)',
+      color: 'inherit',
+      fontWeight: '800',
+      fontSize: 'inherit',
+      whiteSpace: 'nowrap'
+    });
 
-Object.assign(resetBtn.style, {
-  padding: '10px 18px',
-  borderRadius: '999px',
-  border: 'none',
-  cursor: 'pointer',
-  background: 'rgba(0,0,0,0.25)',
-  color: 'inherit',
-  fontWeight: '800',
-  fontSize: 'inherit'
-});
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'kgb-btn';
+    doneBtn.textContent = t('done');
+    Object.assign(doneBtn.style, {
+      padding: '10px 22px',
+      borderRadius: '999px',
+      border: 'none',
+      cursor: 'pointer',
+      background: 'rgba(255,255,255,0.95)',
+      color: '#2d3436',
+      fontWeight: '900',
+      fontSize: 'inherit',
+      whiteSpace: 'nowrap'
+    });
 
-const doneBtn = document.createElement('button');
-doneBtn.className = 'kgb-btn';
-doneBtn.textContent = t('done');
+    const fb = document.createElement('div');
+    fb.style.minHeight = '24px';
+    fb.style.fontWeight = '800';
+    fb.style.textAlign = 'center';
+    fb.style.gridColumn = '1 / -1';
+    fb.style.marginTop = '8px';
 
-Object.assign(doneBtn.style, {
-  padding: '10px 22px',
-  borderRadius: '999px',
-  border: 'none',
-  cursor: 'pointer',
-  background: 'rgba(255,255,255,0.95)',
-  color: '#2d3436',
-  fontWeight: '900',
-  fontSize: 'inherit'
-});
+    resetBtn.addEventListener('click', () => {
+      chipsWrap.innerHTML = '';
+      shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
+      fb.textContent = '';
+    });
 
-resetBtn.addEventListener('click', () => {
-  chipsWrap.innerHTML = '';
-  shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
-  fb.textContent = '';
-});
+    function currentAnswer(){
+      const toks = Array.from(chipsWrap.children).map(el => el.textContent);
+      return joinTokens(toks);
+    }
 
-function currentAnswer(){
-  const toks = Array.from(chipsWrap.children).map(el => el.textContent);
-  return joinTokens(toks);
-}
+    doneBtn.addEventListener('click', () => {
+      const got = normSpaces(currentAnswer());
+      const want = normSpaces(target);
+      if (!got) { fb.textContent = ''; return; }
 
-doneBtn.addEventListener('click', () => {
-  const got = normSpaces(currentAnswer());
-  const want = normSpaces(target);
-  if (!got) { fb.textContent = ''; return; }
+      if (got === want) {
+        fb.textContent = t('correct');
+        launchFirework(msg);
+        setTimeout(() => {
+          msg.remove();
+          onDone && onDone();
+        }, 450);
+      } else {
+        fb.textContent = t('wrong');
+      }
+    });
 
-  if (got === want) {
-    fb.textContent = t('correct');
-    launchFirework(msg);
-    setTimeout(() => {
-      msg.remove();
-      onDone && onDone();
-    }, 450);
-  } else {
-    fb.textContent = t('wrong');
-  }
-});
-
-controls.appendChild(resetBtn);
-controls.appendChild(doneBtn);
+    controlsCol.appendChild(resetBtn);
+    controlsCol.appendChild(doneBtn);
 
     msg.appendChild(chipsWrap);
-    msg.appendChild(controls);
+    msg.appendChild(controlsCol);
     msg.appendChild(fb);
 
     if (window.MathJax && window.MathJax.typesetPromise) {
@@ -838,11 +818,9 @@ controls.appendChild(doneBtn);
     root.appendChild(msg);
   }
 
-
   function showMessage(id, onDone) {
     const raw = TASKS[id] || "";
 
-    // Задание-картинка
     if (raw && typeof raw === 'object' && raw.type === 'image' && raw.image) {
       const wrap = document.createElement('div');
       Object.assign(wrap.style, {
@@ -860,7 +838,7 @@ controls.appendChild(doneBtn);
       Object.assign(img.style, { maxWidth:'75vw', maxHeight:'75vh', borderRadius:'14px', display:'block' });
       wrap.appendChild(img);
 
-          const doneBtn = document.createElement('button');
+      const doneBtn = document.createElement('button');
       doneBtn.className = 'kgb-btn';
       doneBtn.textContent = t('done');
 
@@ -884,7 +862,6 @@ controls.appendChild(doneBtn);
       return;
     }
 
-    // Режим «собери предложение»
     if (orderMode && typeof raw === 'string' && raw && !raw.includes('::')) {
       showOrderSentence(raw, onDone);
       return;
@@ -897,7 +874,6 @@ controls.appendChild(doneBtn);
     const msg = makeTaskCardBase();
     msg.style.textAlign = 'center';
 
-    // Вопрос
     const q = document.createElement('div');
     q.className = 'task-question';
     q.innerHTML = question || `<b>Task ${id}</b>`;
@@ -906,7 +882,6 @@ controls.appendChild(doneBtn);
     msg.appendChild(q);
 
     if (options.length === 0) {
-      // TEXT: устный ответ → кнопка Done
       const doneBtn = document.createElement('button');
       doneBtn.textContent = t('done');
       Object.assign(doneBtn.style, {
@@ -926,7 +901,6 @@ controls.appendChild(doneBtn);
       msg.appendChild(doneBtn);
 
     } else if (options.length === 1) {
-      // INPUT
       const correct = options[0].toLowerCase();
 
       const input = document.createElement('input');
@@ -943,7 +917,7 @@ controls.appendChild(doneBtn);
       input.placeholder = t('inputPlaceholder');
       msg.appendChild(input);
 
-            const btn = document.createElement('button');
+      const btn = document.createElement('button');
       btn.className = 'kgb-btn';
       btn.textContent = t('btnOk');
 
@@ -968,7 +942,8 @@ controls.appendChild(doneBtn);
       function checkAnswer() {
         const value = (input.value || '').trim().toLowerCase();
         if (!value) return;
-              if (value === correct) {
+
+        if (value === correct) {
           fb.textContent = t('correct');
           launchFirework(msg);
           setTimeout(() => {
@@ -978,7 +953,6 @@ controls.appendChild(doneBtn);
         } else {
           fb.textContent = t('wrong');
         }
-
       }
 
       btn.addEventListener('click', checkAnswer);
@@ -987,7 +961,6 @@ controls.appendChild(doneBtn);
       });
 
     } else {
-      // QUIZ
       const correct = options[0];
       const shuffled = shuffle([...options]);
 
@@ -998,7 +971,7 @@ controls.appendChild(doneBtn);
       list.style.marginTop = '8px';
 
       shuffled.forEach(opt => {
-               const btn = document.createElement('button');
+        const btn = document.createElement('button');
         btn.className = 'kgb-btn';
         btn.textContent = opt;
 
@@ -1013,7 +986,7 @@ controls.appendChild(doneBtn);
           color: '#2d3436'
         });
         btn.addEventListener('click', () => {
-                 if (opt === correct) {
+          if (opt === correct) {
             btn.style.background = '#00b894';
             btn.style.color = '#fff';
             launchFirework(msg);
@@ -1025,7 +998,6 @@ controls.appendChild(doneBtn);
             btn.style.background = '#d63031';
             btn.style.color = '#fff';
           }
-
         });
         list.appendChild(btn);
       });
@@ -1041,129 +1013,122 @@ controls.appendChild(doneBtn);
   }
 
   // ----------------------
-  // ФИНАЛЬНЫЙ ФИДБЕК
+  // ФИНАЛЬНЫЙ ФИДБЕК (ПО ЦЕНТРУ ВСЕГДА + БЕЗ РАСТЯГИВАНИЯ КАРТИНКИ)
   // ----------------------
- function showFinal() {
-  if (!feedbackEnabled) return;
-  try { counter.remove(); } catch(_){}
+  function showFinal() {
+    if (!feedbackEnabled) return;
+    try { counter.remove(); } catch(_){}
 
-  // контейнер
-  const wrap = document.createElement('div');
-  Object.assign(wrap.style, {
-    position: 'absolute',
-    left: '50%',
-    top: '50%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 400,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '14px',
-    maxWidth: '80vw',
-    maxHeight: '85vh',
-    pointerEvents: 'auto',
-    animation: 'popUp .7s ease-out forwards'  // Плавное появление с увеличением
-  });
-  root.appendChild(wrap);
+    const overlay = document.createElement('div');
+    Object.assign(overlay.style, {
+      position: 'fixed',
+      inset: '0',
+      zIndex: 400,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'auto',
+      animation: 'popUp .7s ease-out forwards'
+    });
 
-  // текст
-  const label = document.createElement('div');
-  label.innerHTML = finalText || '🎉 Well done!';
-  Object.assign(label.style, {
-    padding: '14px 26px',
-    borderRadius: '16px',
-    fontWeight: '900',
-    textAlign: 'center',
-    maxWidth: '80vw',
-    wordBreak: 'break-word',
-    color: '#fff',
-    background: 'rgba(0,0,0,0.72)',
-    fontSize: (styleTask?.fontSize ? styleTask.fontSize + 'px' : '28px'),
-    boxShadow: '0 8px 20px rgba(0,0,0,.3)',
-    border: '2px solid rgba(255,255,255,.18)',
-    pointerEvents: 'none',
-    animation: 'popUp .7s ease-out forwards'  // Анимация появления
-  });
+    const wrap = document.createElement('div');
+    Object.assign(wrap.style, {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '14px',
+      maxWidth: '80vw',
+      maxHeight: '85vh',
+      pointerEvents: 'auto'
+    });
 
-  if (styleFeedback) {
-    if (styleFeedback.bgColor) label.style.background = styleFeedback.bgColor;
-    if (styleFeedback.borderColor) label.style.border = '2px solid ' + styleFeedback.borderColor;
-    if (styleFeedback.textColor) label.style.color = styleFeedback.textColor;
-    if (styleFeedback.fontSize) label.style.fontSize = styleFeedback.fontSize + 'px';
-    if (styleFeedback.neon) {
-      const glow = styleFeedback.borderColor || '#fff';
-      label.style.boxShadow = `0 0 20px ${glow}`;
-    }
-  }
+    overlay.appendChild(wrap);
+    document.body.appendChild(overlay);
 
-  wrap.appendChild(label);
+    const label = document.createElement('div');
+    label.innerHTML = finalText || '🎉 Well done!';
+    Object.assign(label.style, {
+      padding: '14px 26px',
+      borderRadius: '16px',
+      fontWeight: '900',
+      textAlign: 'center',
+      maxWidth: '80vw',
+      wordBreak: 'break-word',
+      color: '#fff',
+      background: 'rgba(0,0,0,0.72)',
+      fontSize: (styleTask?.fontSize ? styleTask.fontSize + 'px' : '28px'),
+      boxShadow: '0 8px 20px rgba(0,0,0,.3)',
+      border: '2px solid rgba(255,255,255,.18)',
+      pointerEvents: 'none',
+      animation: 'popUp .7s ease-out forwards'
+    });
 
-  // картинка
-  const chest = document.createElement('img');
-  chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
-  Object.assign(chest.style, {
-    display: 'block',
-    width: 'min(320px,70vw)',
-    height: 'auto',
-    cursor: 'pointer',
-    animation: 'fadeIn .8s ease-out',
-    transition: 'transform .4s ease',
-    filter: 'drop-shadow(0 16px 28px rgba(0,0,0,.35))'
-  });
-  wrap.appendChild(chest);
-
-  function fitFeedbackImage() {
-    const maxH = Math.floor(window.innerHeight * 0.85);
-    const labelH = label.offsetHeight || 0;
-    const available = Math.max(120, maxH - labelH - 34);
-    chest.style.maxHeight = available + 'px';
-    chest.style.maxWidth = '70vw';
-  }
-
-  chest.addEventListener('load', fitFeedbackImage);
-  window.addEventListener('resize', fitFeedbackImage);
-
-  const openSound = new Audio(sounds.open);
-
-  chest.addEventListener('click', () => {
-    chest.style.transform = 'scale(1.08)';
-    openSound.play().catch(() => {});
-
-    for (let i = 0; i < 40; i++) {
-      const s = document.createElement('div');
-      s.textContent = ['✨','💫','🌟','🔮'][Math.floor(Math.random() * 4)];
-      s.style.setProperty('--dx', (Math.random() - 0.5) * 220 + 'px');
-      s.style.setProperty('--dy', (Math.random() - 0.5) * 220 + 'px');
-      Object.assign(s.style, {
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: `translate(-50%,-50%) scale(${Math.random() * .6 + .6})`,
-        fontSize: (Math.random() * 20 + 10) + 'px',
-        opacity: .8,
-        animation: 'sparkFly 1.4s ease-out forwards',
-        zIndex: 999,
-        pointerEvents: 'none'
-      });
-      root.appendChild(s);
-      setTimeout(() => s.remove(), 1500);
+    if (styleFeedback) {
+      if (styleFeedback.bgColor) label.style.background = styleFeedback.bgColor;
+      if (styleFeedback.borderColor) label.style.border = '2px solid ' + styleFeedback.borderColor;
+      if (styleFeedback.textColor) label.style.color = styleFeedback.textColor;
+      if (styleFeedback.fontSize) label.style.fontSize = styleFeedback.fontSize + 'px';
+      if (styleFeedback.neon) {
+        const glow = styleFeedback.borderColor || '#fff';
+        label.style.boxShadow = `0 0 20px ${glow}`;
+      }
     }
 
-    setTimeout(fitFeedbackImage, 50);
+    wrap.appendChild(label);
+
+    const chest = document.createElement('img');
+    chest.src = feedbackImage || 'https://img.genially.com/64233afb55129a0017751c8e/915b9b98-7a24-4b3f-887a-28042ba9acca.png';
+    Object.assign(chest.style, {
+      display: 'block',
+      maxWidth: '70vw',
+      maxHeight: '55vh',
+      width: 'auto',
+      height: 'auto',
+      objectFit: 'contain',
+      cursor: 'pointer',
+      animation: 'fadeIn .8s ease-out',
+      transition: 'transform .4s ease',
+      filter: 'drop-shadow(0 16px 28px rgba(0,0,0,.35))'
+    });
+    wrap.appendChild(chest);
+
+    const openSound = new Audio(sounds.open);
+
+    chest.addEventListener('click', () => {
+      chest.style.transform = 'scale(1.08)';
+      openSound.play().catch(() => {});
+
+      for (let i = 0; i < 40; i++) {
+        const s = document.createElement('div');
+        s.textContent = ['✨','💫','🌟','🔮'][Math.floor(Math.random() * 4)];
+        s.style.setProperty('--dx', (Math.random() - 0.5) * 220 + 'px');
+        s.style.setProperty('--dy', (Math.random() - 0.5) * 220 + 'px');
+        Object.assign(s.style, {
+          position: 'fixed',
+          left: '50%',
+          top: '50%',
+          transform: `translate(-50%,-50%) scale(${Math.random() * .6 + .6})`,
+          fontSize: (Math.random() * 20 + 10) + 'px',
+          opacity: .8,
+          animation: 'sparkFly 1.4s ease-out forwards',
+          zIndex: 999,
+          pointerEvents: 'none'
+        });
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 1500);
+      }
+
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([label]).catch(() => {});
+      }
+    });
 
     if (window.MathJax?.typesetPromise) {
       window.MathJax.typesetPromise([label]).catch(() => {});
     }
-  });
-
-  if (window.MathJax?.typesetPromise) {
-    window.MathJax.typesetPromise([label]).catch(() => {});
   }
-}
-
 
 })();
   </script>
 </body>
 </html>
-
