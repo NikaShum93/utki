@@ -111,7 +111,10 @@
   let uiLang = 'ru';           // 'ru','en','es','de','fr','it','ja','zh'
   let feedbackEnabled = true;  // можно отключить финальный фидбек
   let orderMode = false;       // режим «собери предложение» для всех текстовых заданий
-  let lockNext = true;         // НОВОЕ: нельзя лопнуть следующий пока предыдущий не выполнен (по умолчанию включено)
+
+  // ✅ ВАЖНО: lockNext теперь означает НЕ "строгий порядок",
+  // а "нельзя открыть новый пузырёк, пока не закрыто текущее задание".
+  let lockNext = true;
 
   // то, что можно переопределять через URL (для совместимости)
   let finalText = decodeURIComponent(urlParams.get('final') || "🎉 Well Done!");
@@ -146,9 +149,10 @@
   const bubbles = [];
   const BUBBLE_SIZE = 80;
 
-  // НОВОЕ: прогресс по порядку
-  let currentId = 1;
+  // ✅ НОВОЕ: блок кликов, пока открыто задание
   let taskOpen = false;
+
+  // Чтобы считать "выполнено" только после Done/правильно
   let pendingBubbleEl = null;
   let pendingBubbleId = null;
 
@@ -202,31 +206,10 @@
       el.style.background = rgba;
       return;
     }
-    // если не hex (градиент/rgba/картинка) — оставляем как есть, opacity не трогаем
     el.style.background = bg;
   }
 
-  function finishCurrentTask(){
-    // закрыли/выполнили задачу → только тут считаем «лопнул»
-    if (pendingBubbleEl && pendingBubbleEl.parentNode) pendingBubbleEl.remove();
-
-    popped++;
-    refreshCounter();
-
-    if (lockNext) currentId = Math.min(total + 1, currentId + 1);
-
-    taskOpen = false;
-    pendingBubbleEl = null;
-    pendingBubbleId = null;
-
-    if (popped === total && !finalUnlocked) {
-      finalUnlocked = true;
-      showFinal();
-    }
-  }
-
   function denyClickFeedback(){
-    // маленькая встряска/подсказка (без текста)
     const s = document.createElement('div');
     Object.assign(s.style,{
       position:'absolute', top:'50%', left:'50%',
@@ -237,6 +220,23 @@
     });
     root.appendChild(s);
     setTimeout(()=>s.remove(), 380);
+  }
+
+  function finishCurrentTask(){
+    // Считаем выполненным только ПОСЛЕ выполнения/Done
+    if (pendingBubbleEl && pendingBubbleEl.parentNode) pendingBubbleEl.remove();
+
+    popped++;
+    refreshCounter();
+
+    taskOpen = false;
+    pendingBubbleEl = null;
+    pendingBubbleId = null;
+
+    if (popped === total && !finalUnlocked) {
+      finalUnlocked = true;
+      showFinal();
+    }
   }
 
   // Инициализация: тянем JSON, если есть id
@@ -255,46 +255,34 @@
           quizUseOtherCorrect = true;
         }
 
-        // Картинка светлячков
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
-
-        // Итоговый текст
         if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
-
-        // Картинка фидбека (сундук / что угодно)
         if (cfg?.feedbackImage) feedbackImage = cfg.feedbackImage;
 
-        // Звуки из редактора
         if (cfg?.sounds?.pop)  sounds.pop  = cfg.sounds.pop;
         if (cfg?.sounds?.open) sounds.open = cfg.sounds.open;
 
-        // Стили задания / фидбека
         if (cfg?.style?.task)     styleTask     = cfg.style.task;
         if (cfg?.style?.feedback) styleFeedback = cfg.style.feedback;
 
-        // Язык интерфейса
         if (cfg?.lang && ['ru','en','es','de','fr','it','ja','zh'].includes(cfg.lang)) uiLang = cfg.lang;
         if (cfg?.language && ['ru','en','es','de','fr','it','ja','zh'].includes(cfg.language)) uiLang = cfg.language;
         const urlLang = urlParams.get('lang');
         if (urlLang && ['ru','en','es','de','fr','it','ja','zh'].includes(urlLang)) uiLang = urlLang;
 
-        // Можно отключить финальный фидбек
         if (cfg?.feedbackEnabled === false || cfg?.disableFeedback === true) feedbackEnabled = false;
 
-        // Режим «собери предложение» (глобально для всех простых текстовых заданий)
         if (cfg?.orderMode === true || cfg?.mode === 'order') orderMode = true;
 
-        // НОВОЕ: блокировка следующего (если есть в cfg)
+        // ✅ lockNext из редактора теперь = "block while task open"
         if (cfg?.lockNext === false) lockNext = false;
 
-        // Задачи из редактора: tasks: [{ question, correct:[], wrong:[] }]
         if (cfg?.tasks && cfg.tasks.length){
           Object.keys(TASKS).forEach(k => delete TASKS[k]);
 
           cfg.tasks.forEach((t, i) => {
             if (!t) return;
 
-            // Задание-картинка (PNG/GIF по ссылке)
             if (t.type === 'image' && t.image) {
               TASKS[i + 1] = { type: 'image', image: String(t.image).trim() };
               return;
@@ -376,7 +364,7 @@
     for (let i = 1; i <= totalLocal; i++) {
       const el = document.createElement('img');
       el.src = bubbleImg;
-      el.style.opacity = isCustomImg ? '1' : '1';
+      el.style.opacity = '1';
       Object.assign(el.style, {
         position: 'absolute',
         width: BUBBLE_SIZE + 'px',
@@ -397,8 +385,9 @@
       bubbles.push(bubble);
 
       el.addEventListener('click', () => {
-        if (taskOpen) { denyClickFeedback(); return; }
-        if (lockNext && i !== currentId) { denyClickFeedback(); return; }
+        // ✅ нужное поведение:
+        // если задание открыто и lockNext включён → блокируем любые новые клики
+        if (lockNext && taskOpen) { denyClickFeedback(); return; }
 
         // звук лопания
         const pop = new Audio(sounds.pop);
@@ -409,7 +398,7 @@
         pendingBubbleEl = el;
         pendingBubbleId = i;
 
-        // делаем «лопнувшим», но не удаляем до выполнения
+        // делаем «в процессе», но не удаляем до выполнения
         el.style.pointerEvents = 'none';
         el.style.opacity = '0.35';
         el.style.filter = 'grayscale(1)';
@@ -455,13 +444,11 @@
       x += b.dx;
       y += b.dy;
 
-      // Отскоки
       if (x < 0) { x = 0; b.dx = -b.dx + (Math.random() - 0.5) * 0.4; }
       if (x > W - BUBBLE_SIZE) { x = W - BUBBLE_SIZE; b.dx = -b.dx + (Math.random() - 0.5) * 0.4; }
       if (y < 0) { y = 0; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
       if (y > H - BUBBLE_SIZE) { y = H - BUBBLE_SIZE; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
 
-      // Чтобы не залипали
       if (Math.abs(b.dx) < 0.3) b.dx += (Math.random() - 0.5) * 0.5;
       if (Math.abs(b.dy) < 0.3) b.dy += (Math.random() - 0.5) * 0.5;
 
@@ -499,7 +486,6 @@
 
   function normSpaces(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
 
-  // токенизация предложения для режима «собери по порядку»
   function tokenizeSentence(s){
     const str = String(s||'').trim();
     return (str.match(/[\p{L}\p{M}]+|\p{N}+|[^\s]/gu) || []);
@@ -539,7 +525,6 @@
       maxWidth: '70vw'
     });
 
-    // применяем стили задания из редактора
     if (styleTask){
       if (styleTask.bgColor) applyBgWithOpacity(msg, styleTask.bgColor, (typeof styleTask.opacity === 'number' ? styleTask.opacity : 1));
       if (styleTask.borderColor) msg.style.border = '2px solid ' + styleTask.borderColor;
@@ -557,9 +542,7 @@
     return msg;
   }
 
-  // ----------------------
   // ORDER MODE — без исходного предложения, с кнопкой «Готово»
-  // ----------------------
   function showOrderSentence(sentence, onDone){
     const originalTokens = tokenizeSentence(sentence);
     const target = joinTokens(originalTokens);
@@ -712,7 +695,8 @@
         borderRadius:'999px',
         border:'none',
         cursor:'pointer',
-        fontWeight:'900'
+        fontWeight:'900',
+        fontSize:'inherit'
       });
       wrap.appendChild(doneBtn);
 
@@ -841,7 +825,7 @@
           padding: '12px 14px',
           borderRadius: '999px',
           border: 'none',
-          fontSize: 'inherit',        // НЕ меньше текста задания
+          fontSize: 'inherit',
           fontWeight: '900',
           cursor: 'pointer',
           background: 'rgba(255,255,255,0.92)',
@@ -866,7 +850,6 @@
       msg.appendChild(list);
     }
 
-    // MathJax для вопроса/вариантов
     if (window.MathJax && window.MathJax.typesetPromise) {
       window.MathJax.typesetPromise([msg]).catch(() => {});
     }
@@ -874,9 +857,7 @@
     root.appendChild(msg);
   }
 
-  // ----------------------
-  // ФИНАЛЬНЫЙ ФИДБЕК (сундук / своя картинка)
-  // ----------------------
+  // ФИНАЛЬНЫЙ ФИДБЕК
   function showFinal() {
     if (!feedbackEnabled) return;
     try { counter.remove(); } catch(_){}
@@ -904,7 +885,6 @@
       chest.style.transform = 'translate(-50%, -50%) scale(1.1)';
       openSound.play().catch(() => {});
 
-      // Блёстки
       for (let i = 0; i < 40; i++) {
         const sparkle = document.createElement('div');
         sparkle.textContent = ['✨', '💫', '🌟', '🔮'][Math.floor(Math.random() * 4)];
@@ -928,7 +908,6 @@
         setTimeout(() => sparkle.remove(), 1500);
       }
 
-      // Текст фидбека
       const label = document.createElement('div');
       label.innerHTML = finalText || '🎉 Well done!';
       Object.assign(label.style, {
@@ -936,7 +915,7 @@
         top: '18%',
         left: '50%',
         transform: 'translate(-50%, -50%) scale(0.85)',
-        fontSize: (styleTask?.fontSize ? (styleTask.fontSize + 'px') : '28px'), // одинаковая база с заданиями
+        fontSize: (styleTask?.fontSize ? (styleTask.fontSize + 'px') : '28px'),
         fontWeight: 'bold',
         color: '#fff',
         padding: '14px 26px',
@@ -952,7 +931,6 @@
         textAlign:'center'
       });
 
-      // применяем стили фидбека из редактора
       if (styleFeedback){
         if (styleFeedback.bgColor) label.style.background = styleFeedback.bgColor;
         if (styleFeedback.borderColor) label.style.border = '2px solid ' + styleFeedback.borderColor;
@@ -965,7 +943,6 @@
 
       root.appendChild(label);
 
-      // MathJax для финального текста
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([label]).catch(() => {});
       }
