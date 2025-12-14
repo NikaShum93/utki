@@ -74,6 +74,16 @@
       <label>Язык</label>
       <select id="language"></select>
 
+      <div class="row" style="margin-top:10px">
+        <div style="display:flex; align-items:flex-end;">
+          <label style="margin:0;">
+            <input type="checkbox" id="orderMode"> Режим: собрать предложение из слов (для всех текстовых заданий без ответов)
+          </label>
+          <div class="small-hint">Если включено — любое задание без вариантов/ответа будет показано как «расставь слова по порядку».</div>
+        </div>
+      </div>
+
+
       <label>Шрифт</label>
       <select id="font"></select>
 
@@ -166,6 +176,19 @@
         </div>
       </div>
 
+       <div class="row">
+         <div>
+           <label>Фон текста фидбека</label>
+           <input type="color" id="feedbackBgColor" value="#131316">
+         </div>
+         <div style="display:flex; align-items:flex-end;">
+           <label style="margin:0;">
+             <input type="checkbox" id="feedbackEnabled" checked> Показывать финальный фидбек (сундук/картинка и текст)
+           </label>
+         </div>
+       </div>
+
+
       <label style="margin-top:10px;">
         <input type="checkbox" id="feedbackNeon"> Неоновая рамка фидбека
       </label>
@@ -212,6 +235,7 @@
       { value: "es", label: "Español" },
       { value: "de", label: "Deutsch" },
       { value: "fr", label: "Français" },
+      { value: "it", label: "Italiano" },
       { value: "zh", label: "中文" },
       { value: "ja", label: "日本語" }
     ];
@@ -222,6 +246,7 @@
       es: ["Poppins","Montserrat","Noto Sans","Open Sans"],
       de: ["Fira Sans","Montserrat","Noto Sans","Open Sans"],
       fr: ["Poppins","Montserrat","Noto Sans","Open Sans"],
+      it: ['Rubik','Inter','Noto Sans','Roboto','Arial'],
       zh: ["Noto Sans SC","Noto Serif SC"],
       ja: ["Noto Sans JP","Noto Serif JP"]
     };
@@ -286,6 +311,14 @@
 
         if (!q && !cRaw && !wRaw) continue;
 
+         // Если в вопросе просто ссылка на PNG/GIF/JPG/WEBP — считаем это заданием-картинкой
+         const isImageUrl = (s) => /^https?:\/\//i.test(s) && /\.(png|gif|jpe?g|webp)(\?.*)?$/i.test(s);
+         if (q && !cRaw && !wRaw && isImageUrl(q)) {
+           tasks.push({ type:'image', image:q });
+           continue;
+         }
+
+
         const correct = cRaw
           ? cRaw.split('|').map(s=>s.trim()).filter(Boolean)
           : [];
@@ -306,11 +339,16 @@
       const feedbackBorderColor = $('#feedbackBorderColor').value;
       const feedbackTextColor   = $('#feedbackTextColor').value;
       const feedbackNeon        = $('#feedbackNeon').checked;
+       const feedbackBgColor     = $('#feedbackBgColor').value;
+       const feedbackEnabled     = $('#feedbackEnabled').checked;
+       const orderMode           = $('#orderMode').checked;
+
 
       const autoDistractors = $('#autoDistractors').checked;
 
       return {
         language: lang,
+        lang, // alias для main.html (обратная совместимость)
         font,
         sounds: {
           pop:  popSoundUrl,
@@ -328,6 +366,7 @@
             neon:       taskNeon
           },
           feedback: {
+            bgColor:     feedbackBgColor,
             borderColor: feedbackBorderColor,
             textColor:   feedbackTextColor,
             neon:        feedbackNeon
@@ -336,6 +375,8 @@
         finalFeedback,
         feedbackImage,
         autoDistractors,
+        feedbackEnabled,
+        orderMode,
         tasks
       };
     }
