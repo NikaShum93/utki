@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -78,6 +78,14 @@
       from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
       to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
+
+    @keyframes shake {
+      0%,100%{ transform:translate(-50%,-50%) translateX(0); }
+      20%{ transform:translate(-50%,-50%) translateX(-6px); }
+      40%{ transform:translate(-50%,-50%) translateX(6px); }
+      60%{ transform:translate(-50%,-50%) translateX(-4px); }
+      80%{ transform:translate(-50%,-50%) translateX(4px); }
+    }
   </style>
 </head>
 <body>
@@ -103,7 +111,7 @@
   let uiLang = 'ru';           // 'ru','en','es','de','fr','it','ja','zh'
   let feedbackEnabled = true;  // можно отключить финальный фидбек
   let orderMode = false;       // режим «собери предложение» для всех текстовых заданий
-
+  let lockNext = true;         // НОВОЕ: нельзя лопнуть следующий пока предыдущий не выполнен (по умолчанию включено)
 
   // то, что можно переопределять через URL (для совместимости)
   let finalText = decodeURIComponent(urlParams.get('final') || "🎉 Well Done!");
@@ -125,6 +133,10 @@
       const id = parseInt(key.replace('task', ''));
       TASKS[id] = decodeURIComponent(value);
     }
+    if (key === 'lockNext') {
+      const v = String(value || '').toLowerCase();
+      if (v === '0' || v === 'false' || v === 'off') lockNext = false;
+    }
   }
 
   // Состояния
@@ -133,6 +145,12 @@
   let finalUnlocked = false;
   const bubbles = [];
   const BUBBLE_SIZE = 80;
+
+  // НОВОЕ: прогресс по порядку
+  let currentId = 1;
+  let taskOpen = false;
+  let pendingBubbleEl = null;
+  let pendingBubbleId = null;
 
   // HUD-счётчик
   const counter = document.createElement('div');
@@ -163,20 +181,80 @@
     counterTxt.innerHTML = `<strong>${popped} / ${total}</strong>`;
   }
 
+  // ------- helpers for opacity (only background) -------
+  function hexToRgba(hex, alpha){
+    const h = String(hex||'').trim();
+    const m = h.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if(!m) return null;
+    let x = m[1];
+    if(x.length===3) x = x.split('').map(c=>c+c).join('');
+    const r = parseInt(x.slice(0,2),16);
+    const g = parseInt(x.slice(2,4),16);
+    const b = parseInt(x.slice(4,6),16);
+    const a = Math.max(0, Math.min(1, Number(alpha)));
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  function applyBgWithOpacity(el, bg, opacity){
+    if(!bg) return;
+    const op = (typeof opacity === 'number') ? opacity : 1;
+    const rgba = hexToRgba(bg, op);
+    if(rgba){
+      el.style.background = rgba;
+      return;
+    }
+    // если не hex (градиент/rgba/картинка) — оставляем как есть, opacity не трогаем
+    el.style.background = bg;
+  }
+
+  function finishCurrentTask(){
+    // закрыли/выполнили задачу → только тут считаем «лопнул»
+    if (pendingBubbleEl && pendingBubbleEl.parentNode) pendingBubbleEl.remove();
+
+    popped++;
+    refreshCounter();
+
+    if (lockNext) currentId = Math.min(total + 1, currentId + 1);
+
+    taskOpen = false;
+    pendingBubbleEl = null;
+    pendingBubbleId = null;
+
+    if (popped === total && !finalUnlocked) {
+      finalUnlocked = true;
+      showFinal();
+    }
+  }
+
+  function denyClickFeedback(){
+    // маленькая встряска/подсказка (без текста)
+    const s = document.createElement('div');
+    Object.assign(s.style,{
+      position:'absolute', top:'50%', left:'50%',
+      width:'0', height:'0',
+      zIndex: 999998,
+      animation:'shake .35s ease',
+      pointerEvents:'none'
+    });
+    root.appendChild(s);
+    setTimeout(()=>s.remove(), 380);
+  }
+
   // Инициализация: тянем JSON, если есть id
   (async function init(){
     if (cfgId){
       try{
         const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, { cache:'no-store' });
         const cfg = await res.json();
-      let quizMaxOptions = 4;
-let quizUseOtherCorrect = false;
-          if (typeof cfg?.quizMaxOptions === 'number') {
-  quizMaxOptions = Math.max(2, Math.min(10, Math.floor(cfg.quizMaxOptions)));
-}
-if (cfg?.quizUseOtherCorrect === true) {
-  quizUseOtherCorrect = true;
-}
+
+        let quizMaxOptions = 4;
+        let quizUseOtherCorrect = false;
+        if (typeof cfg?.quizMaxOptions === 'number') {
+          quizMaxOptions = Math.max(2, Math.min(10, Math.floor(cfg.quizMaxOptions)));
+        }
+        if (cfg?.quizUseOtherCorrect === true) {
+          quizUseOtherCorrect = true;
+        }
+
         // Картинка светлячков
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
 
@@ -206,10 +284,11 @@ if (cfg?.quizUseOtherCorrect === true) {
         // Режим «собери предложение» (глобально для всех простых текстовых заданий)
         if (cfg?.orderMode === true || cfg?.mode === 'order') orderMode = true;
 
+        // НОВОЕ: блокировка следующего (если есть в cfg)
+        if (cfg?.lockNext === false) lockNext = false;
 
-               // Задачи из редактора: tasks: [{ question, correct:[], wrong:[] }]
+        // Задачи из редактора: tasks: [{ question, correct:[], wrong:[] }]
         if (cfg?.tasks && cfg.tasks.length){
-          // очищаем старые TASKS (заданные через URL)
           Object.keys(TASKS).forEach(k => delete TASKS[k]);
 
           cfg.tasks.forEach((t, i) => {
@@ -221,64 +300,43 @@ if (cfg?.quizUseOtherCorrect === true) {
               return;
             }
 
-
             const q       = (t.question || "").trim();
             const correct = Array.isArray(t.correct) ? t.correct : [];
             const wrong   = Array.isArray(t.wrong)   ? t.wrong   : [];
 
-            // формируем строку в формате движка:
-            // 1) просто текст        → "текст"
-            // 2) вписать ответ       → "вопрос :: правильный"
-            // 3) квиз                → "вопрос :: правильный :: неверный1 :: неверный2..."
             const parts = [];
-
             if (q) parts.push(q);
 
-          // --- строим варианты квиза с лимитом ---
-const clean = (arr) => (arr || [])
-  .map(x => (x ?? '').toString().replace(/\s+/g, ' ').trim())
-  .filter(Boolean);
+            const clean = (arr) => (arr || [])
+              .map(x => (x ?? '').toString().replace(/\s+/g, ' ').trim())
+              .filter(Boolean);
 
-const correctClean = clean(correct);
-const wrongClean   = clean(wrong);
+            const correctClean = clean(correct);
+            const wrongClean   = clean(wrong);
 
-if (correctClean.length) {
-  const correctMain = correctClean[0];
+            if (correctClean.length) {
+              const correctMain = correctClean[0];
+              const picked = [correctMain];
 
-  // собираем пул вариантов: 1 правильный + (wrong) + (другие правильные по галочке)
-  const picked = [correctMain];
+              const wrongPool = shuffle([...wrongClean]);
+              while (picked.length < quizMaxOptions && wrongPool.length) {
+                const w = wrongPool.shift();
+                if (w && !picked.includes(w)) picked.push(w);
+              }
 
-  // 1) сначала добираем из wrong
-  const wrongPool = shuffle([...wrongClean]);
-  while (picked.length < quizMaxOptions && wrongPool.length) {
-    const w = wrongPool.shift();
-    if (w && !picked.includes(w)) picked.push(w);
-  }
+              if (quizUseOtherCorrect) {
+                const otherPool = shuffle(correctClean.slice(1));
+                while (picked.length < quizMaxOptions && otherPool.length) {
+                  const c = otherPool.shift();
+                  if (c && !picked.includes(c)) picked.push(c);
+                }
+              }
 
-  // 2) если не хватило и включён добор — добираем из других correct
-  if (quizUseOtherCorrect) {
-    const otherPool = shuffle(correctClean.slice(1));
-    while (picked.length < quizMaxOptions && otherPool.length) {
-      const c = otherPool.shift();
-      if (c && !picked.includes(c)) picked.push(c);
-    }
-  }
+              picked.forEach(v => parts.push(v));
+            }
 
-  // ВАЖНО: формат движка = "вопрос :: правильный :: варианты..."
-  // и первый вариант после вопроса должен быть правильным
-  picked.forEach(v => parts.push(v));
-} else {
-  // если правильного нет — это просто текст/вопрос без ответов
-  // (оставляем как было: parts уже содержит question, дальше ничего)
-}
-
-// если правильный был, но вариантов вышло 1 — получится input (вопрос :: ответ)
-// если вариантов >=2 — получится quiz (вопрос :: правильный :: ...)
-
-const line = parts.join(" :: ").trim();
-if (line) {
-  TASKS[i + 1] = line;
-}
+            const line = parts.join(" :: ").trim();
+            if (line) TASKS[i + 1] = line;
           });
         }
 
@@ -339,13 +397,22 @@ if (line) {
       bubbles.push(bubble);
 
       el.addEventListener('click', () => {
+        if (taskOpen) { denyClickFeedback(); return; }
+        if (lockNext && i !== currentId) { denyClickFeedback(); return; }
+
+        // звук лопания
         const pop = new Audio(sounds.pop);
         try { pop.currentTime = 0; pop.play(); } catch(_) {}
 
-        el.remove();
-        showMessage(i);
-        popped++;
-        refreshCounter();
+        // НЕ считаем popped здесь. Сначала надо выполнить задание.
+        taskOpen = true;
+        pendingBubbleEl = el;
+        pendingBubbleId = i;
+
+        // делаем «лопнувшим», но не удаляем до выполнения
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0.35';
+        el.style.filter = 'grayscale(1)';
 
         // мини-вспышка
         const sparkle = document.createElement('div');
@@ -361,6 +428,8 @@ if (line) {
         });
         root.appendChild(sparkle);
         setTimeout(() => sparkle.remove(), 600);
+
+        showMessage(i, finishCurrentTask);
       });
 
       el.addEventListener('mouseenter', () => {
@@ -415,14 +484,14 @@ if (line) {
 
   function t(key){
     const dict = {
-      ru:{inputPlaceholder:'Впиши ответ...', btnOk:'OK', correct:'✅ Верно!', wrong:'❌ Попробуй ещё раз', reset:'Сбросить'},
-      en:{inputPlaceholder:'Type the answer...', btnOk:'OK', correct:'✅ Correct!', wrong:'❌ Try again', reset:'Reset'},
-      es:{inputPlaceholder:'Escribe la respuesta...', btnOk:'OK', correct:'✅ ¡Correcto!', wrong:'❌ Inténtalo de nuevo', reset:'Restablecer'},
-      de:{inputPlaceholder:'Antwort eingeben...', btnOk:'OK', correct:'✅ Richtig!', wrong:'❌ Versuch es noch einmal', reset:'Zurücksetzen'},
-      fr:{inputPlaceholder:'Écris la réponse...', btnOk:'OK', correct:'✅ Correct !', wrong:'❌ Réessaie', reset:'Réinitialiser'},
-      it:{inputPlaceholder:'Scrivi la risposta...', btnOk:'OK', correct:'✅ Corretto!', wrong:'❌ Riprova', reset:'Reimposta'},
-      ja:{inputPlaceholder:'答えを入力してください…', btnOk:'OK', correct:'✅ 正解！', wrong:'❌ もう一度', reset:'リセット'},
-      zh:{inputPlaceholder:'请输入答案…', btnOk:'OK', correct:'✅ 正确！', wrong:'❌ 再试一次', reset:'重置'}
+      ru:{inputPlaceholder:'Впиши ответ...', btnOk:'Готово', done:'Готово', correct:'✅ Верно!', wrong:'❌ Попробуй ещё раз', reset:'Сбросить'},
+      en:{inputPlaceholder:'Type the answer...', btnOk:'Done', done:'Done', correct:'✅ Correct!', wrong:'❌ Try again', reset:'Reset'},
+      es:{inputPlaceholder:'Escribe la respuesta...', btnOk:'Listo', done:'Listo', correct:'✅ ¡Correcto!', wrong:'❌ Inténtalo de nuevo', reset:'Restablecer'},
+      de:{inputPlaceholder:'Antwort eingeben...', btnOk:'Fertig', done:'Fertig', correct:'✅ Richtig!', wrong:'❌ Versuch es noch einmal', reset:'Zurücksetzen'},
+      fr:{inputPlaceholder:'Écris la réponse...', btnOk:'Terminé', done:'Terminé', correct:'✅ Correct !', wrong:'❌ Réessaie', reset:'Réinitialiser'},
+      it:{inputPlaceholder:'Scrivi la risposta...', btnOk:'Fatto', done:'Fatto', correct:'✅ Corretto!', wrong:'❌ Riprova', reset:'Reimposta'},
+      ja:{inputPlaceholder:'答えを入力してください…', btnOk:'完了', done:'完了', correct:'✅ 正解！', wrong:'❌ もう一度', reset:'リセット'},
+      zh:{inputPlaceholder:'请输入答案…', btnOk:'完成', done:'完成', correct:'✅ 正确！', wrong:'❌ 再试一次', reset:'重置'}
     };
     const lang = dict[uiLang] ? uiLang : 'en';
     return dict[lang][key] || key;
@@ -450,186 +519,7 @@ if (line) {
     return out;
   }
 
-  // ----------------------
-  // ОКНО ЗАДАНИЯ
-  // Формат строки:
-  // 1) "просто текст" → просто показали, закрыли по клику
-  // 2) "вопрос :: ответ" → режим "вписать ответ"
-  // 3) "вопрос :: вариант1 :: вариант2 :: ..." → квиз, первый вариант = правильный
-  // ----------------------
-  function showOrderSentence(sentence){
-    const originalTokens = tokenizeSentence(sentence);
-    const target = joinTokens(originalTokens);
-
-    const msg = document.createElement('div');
-    Object.assign(msg.style, {
-      position:'absolute',
-      top:'50%', left:'50%',
-      transform:'translate(-50%, -50%)',
-      background:'linear-gradient(135deg, #4facfe, #00f2fe)',
-      color:'white',
-      padding:'20px 22px',
-      borderRadius:'20px',
-      fontSize:'22px',
-      fontFamily:'sans-serif',
-      textAlign:'center',
-      boxShadow:'0 6px 16px rgba(0,0,0,0.3)',
-      pointerEvents:'auto',
-      zIndex:200,
-      maxWidth:'80vw'
-    });
-
-    // стили из редактора
-    if (styleTask){
-      if (styleTask.bgColor) msg.style.background = styleTask.bgColor;
-      if (styleTask.borderColor) msg.style.border = '2px solid ' + styleTask.borderColor;
-      if (typeof styleTask.opacity === 'number') msg.style.opacity = styleTask.opacity;
-      if (styleTask.fontSize) msg.style.fontSize = styleTask.fontSize + 'px';
-      if (styleTask.textColor) msg.style.color = styleTask.textColor;
-      else if (styleTask.color) msg.style.color = styleTask.color;
-      if (styleTask.neon){
-        const glow = styleTask.borderColor || '#ffffff';
-        msg.style.boxShadow = `0 0 18px ${glow}`;
-      }
-    }
-
-    const answer = document.createElement('div');
-    Object.assign(answer.style, {
-      display:'flex', flexWrap:'wrap', gap:'8px', justifyContent:'center',
-      padding:'10px', borderRadius:'14px', background:'rgba(0,0,0,0.18)',
-      marginBottom:'10px', minHeight:'44px'
-    });
-
-    const bank = document.createElement('div');
-    Object.assign(bank.style, {
-      display:'flex', flexWrap:'wrap', gap:'8px', justifyContent:'center',
-      padding:'10px', borderRadius:'14px', background:'rgba(255,255,255,0.16)'
-    });
-
-    const makeChip = (text) => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.textContent = text;
-      Object.assign(chip.style, {
-        border:'none', borderRadius:'999px',
-        padding:'8px 12px',
-        fontSize:'16px',
-        cursor:'pointer',
-        background:'rgba(255,255,255,0.92)',
-        color:'#2d3436'
-      });
-      return chip;
-    };
-
-    const fb = document.createElement('div');
-    fb.style.marginTop = '10px';
-    fb.style.minHeight = '24px';
-    fb.style.fontWeight = '700';
-
-    const resetBtn = document.createElement('button');
-    resetBtn.textContent = t('reset');
-    Object.assign(resetBtn.style, {
-      marginTop:'10px',
-      padding:'8px 16px',
-      borderRadius:'999px',
-      border:'none',
-      cursor:'pointer',
-      background:'rgba(0,0,0,0.25)',
-      color:'inherit',
-      fontWeight:'700'
-    });
-
-    resetBtn.addEventListener('click', () => {
-      const chips = Array.from(answer.querySelectorAll('button'));
-      chips.forEach(ch => bank.appendChild(ch));
-      fb.textContent = '';
-    });
-
-    function currentAnswer(){
-      const toks = Array.from(answer.querySelectorAll('button')).map(b => b.textContent);
-      return joinTokens(toks);
-    }
-
-    function checkDone(){
-      const toks = Array.from(answer.querySelectorAll('button'));
-      if (toks.length !== originalTokens.length) { fb.textContent = ''; return; }
-
-      const got = normSpaces(currentAnswer());
-      const want = normSpaces(target);
-      if (got === want){
-        fb.textContent = t('correct');
-        setTimeout(() => {
-          msg.remove();
-          if (popped === total && !finalUnlocked) { finalUnlocked = true; showFinal(); }
-        }, 500);
-      } else {
-        fb.textContent = t('wrong');
-      }
-    }
-
-    const onChipClick = (chip) => {
-      if (chip.parentNode === bank) {
-        answer.appendChild(chip);
-      } else {
-        bank.appendChild(chip);
-      }
-      checkDone();
-    };
-
-    const shuffled = shuffle([...originalTokens]);
-    shuffled.forEach(tok => {
-      const chip = makeChip(tok);
-      chip.addEventListener('click', () => onChipClick(chip));
-      bank.appendChild(chip);
-    });
-
-    msg.appendChild(answer);
-    msg.appendChild(bank);
-    msg.appendChild(resetBtn);
-    msg.appendChild(fb);
-
-    if (window.MathJax && window.MathJax.typesetPromise) {
-      window.MathJax.typesetPromise([msg]).catch(() => {});
-    }
-
-    root.appendChild(msg);
-  }
-
-  function showMessage(id) {
-    const raw = TASKS[id] || "";
-    // Задание-картинка (PNG/GIF): TASKS[id] = {type:'image', image:'...'}
-    if (raw && typeof raw === 'object' && raw.type === 'image' && raw.image) {
-      const wrap = document.createElement('div');
-      Object.assign(wrap.style, {
-        position:'absolute', top:'50%', left:'50%', transform:'translate(-50%, -50%)',
-        zIndex:200, pointerEvents:'auto',
-        background: (styleTask?.bgColor || 'rgba(0,0,0,0.55)'),
-        border: styleTask?.borderColor ? ('2px solid ' + styleTask.borderColor) : 'none',
-        borderRadius:'18px', padding:'14px',
-        boxShadow: styleTask?.neon ? ('0 0 18px ' + (styleTask.borderColor || '#fff')) : '0 6px 16px rgba(0,0,0,0.3)'
-      });
-      const img = document.createElement('img');
-      img.src = raw.image;
-      Object.assign(img.style, { maxWidth:'75vw', maxHeight:'75vh', borderRadius:'14px', display:'block' });
-      wrap.appendChild(img);
-      wrap.addEventListener('click', () => {
-        wrap.remove();
-        if (popped === total && !finalUnlocked) { finalUnlocked = true; showFinal(); }
-      });
-      root.appendChild(wrap);
-      return;
-    }
-
-    // Режим «собери предложение»: любое простое текстовое задание (без ::) превращаем в сборку слов
-    if (orderMode && typeof raw === 'string' && raw && !raw.includes('::')) {
-      showOrderSentence(raw);
-      return;
-    }
-
-    const parts = raw.split("::");
-    const question = (parts[0] || raw).trim();
-    const options = parts.slice(1).map(s => s.trim()).filter(Boolean);
-
+  function makeTaskCardBase(){
     const msg = document.createElement('div');
     Object.assign(msg.style, {
       position: 'absolute',
@@ -642,7 +532,7 @@ if (line) {
       borderRadius: '20px',
       fontSize: '22px',
       fontFamily: 'sans-serif',
-      textAlign: 'center',
+      textAlign: 'left',
       boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
       pointerEvents: 'auto',
       zIndex: 200,
@@ -651,56 +541,244 @@ if (line) {
 
     // применяем стили задания из редактора
     if (styleTask){
-      if (styleTask.bgColor) {
-        msg.style.background = styleTask.bgColor;
-      }
-      if (styleTask.borderColor) {
-        msg.style.border = '2px solid ' + styleTask.borderColor;
-      }
-      if (typeof styleTask.opacity === 'number') {
-        msg.style.opacity = styleTask.opacity;
-      }
-      if (styleTask.fontSize) {
-        msg.style.fontSize = styleTask.fontSize + 'px';
-      // цвет текста задания
-      if (styleTask.textColor) { msg.style.color = styleTask.textColor; }
-      else if (styleTask.color) { msg.style.color = styleTask.color; }
-      }
+      if (styleTask.bgColor) applyBgWithOpacity(msg, styleTask.bgColor, (typeof styleTask.opacity === 'number' ? styleTask.opacity : 1));
+      if (styleTask.borderColor) msg.style.border = '2px solid ' + styleTask.borderColor;
+
+      if (styleTask.fontSize) msg.style.fontSize = styleTask.fontSize + 'px';
+      if (styleTask.textColor) msg.style.color = styleTask.textColor;
+      else if (styleTask.color) msg.style.color = styleTask.color;
+
       if (styleTask.neon) {
         const glow = styleTask.borderColor || '#ffffff';
         msg.style.boxShadow = `0 0 18px ${glow}`;
       }
     }
 
+    return msg;
+  }
+
+  // ----------------------
+  // ORDER MODE — без исходного предложения, с кнопкой «Готово»
+  // ----------------------
+  function showOrderSentence(sentence, onDone){
+    const originalTokens = tokenizeSentence(sentence);
+    const target = joinTokens(originalTokens);
+
+    const msg = makeTaskCardBase();
+    msg.style.textAlign = 'center';
+    msg.style.maxWidth = '80vw';
+
+    const answer = document.createElement('div');
+    Object.assign(answer.style, {
+      display:'flex', flexWrap:'wrap', gap:'10px', justifyContent:'center',
+      padding:'12px', borderRadius:'14px', background:'rgba(0,0,0,0.18)',
+      marginBottom:'12px', minHeight:'54px'
+    });
+
+    const bank = document.createElement('div');
+    Object.assign(bank.style, {
+      display:'flex', flexWrap:'wrap', gap:'10px', justifyContent:'center',
+      padding:'12px', borderRadius:'14px', background:'rgba(255,255,255,0.16)'
+    });
+
+    const makeChip = (text) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.textContent = text;
+      Object.assign(chip.style, {
+        border:'none', borderRadius:'999px',
+        padding:'10px 14px',
+        fontSize:'inherit',
+        cursor:'pointer',
+        background:'rgba(255,255,255,0.92)',
+        color:'#2d3436',
+        fontWeight:'700'
+      });
+      return chip;
+    };
+
+    const fb = document.createElement('div');
+    fb.style.marginTop = '10px';
+    fb.style.minHeight = '28px';
+    fb.style.fontWeight = '800';
+    fb.style.textAlign = 'center';
+
+    const controls = document.createElement('div');
+    Object.assign(controls.style, { display:'flex', gap:'10px', justifyContent:'center', marginTop:'12px', flexWrap:'wrap' });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = t('reset');
+    Object.assign(resetBtn.style, {
+      padding:'10px 16px',
+      borderRadius:'999px',
+      border:'none',
+      cursor:'pointer',
+      background:'rgba(0,0,0,0.25)',
+      color:'inherit',
+      fontWeight:'800',
+      fontSize:'inherit'
+    });
+
+    const doneBtn = document.createElement('button');
+    doneBtn.textContent = t('done');
+    Object.assign(doneBtn.style, {
+      padding:'10px 18px',
+      borderRadius:'999px',
+      border:'none',
+      cursor:'pointer',
+      background:'rgba(255,255,255,0.92)',
+      color:'#2d3436',
+      fontWeight:'900',
+      fontSize:'inherit'
+    });
+
+    resetBtn.addEventListener('click', () => {
+      const chips = Array.from(answer.querySelectorAll('button'));
+      chips.forEach(ch => bank.appendChild(ch));
+      fb.textContent = '';
+    });
+
+    const onChipClick = (chip) => {
+      if (chip.parentNode === bank) answer.appendChild(chip);
+      else bank.appendChild(chip);
+      fb.textContent = '';
+    };
+
+    const shuffled = shuffle([...originalTokens]);
+    shuffled.forEach(tok => {
+      const chip = makeChip(tok);
+      chip.addEventListener('click', () => onChipClick(chip));
+      bank.appendChild(chip);
+    });
+
+    function currentAnswer(){
+      const toks = Array.from(answer.querySelectorAll('button')).map(b => b.textContent);
+      return joinTokens(toks);
+    }
+
+    doneBtn.addEventListener('click', () => {
+      const got = normSpaces(currentAnswer());
+      const want = normSpaces(target);
+      if (!got) { fb.textContent = ''; return; }
+      if (got === want){
+        fb.textContent = t('correct');
+        setTimeout(() => { msg.remove(); onDone && onDone(); }, 450);
+      } else {
+        fb.textContent = t('wrong');
+      }
+    });
+
+    msg.appendChild(answer);
+    msg.appendChild(bank);
+
+    controls.appendChild(resetBtn);
+    controls.appendChild(doneBtn);
+    msg.appendChild(controls);
+    msg.appendChild(fb);
+
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([msg]).catch(() => {});
+    }
+
+    root.appendChild(msg);
+  }
+
+  function showMessage(id, onDone) {
+    const raw = TASKS[id] || "";
+
+    // Задание-картинка
+    if (raw && typeof raw === 'object' && raw.type === 'image' && raw.image) {
+      const wrap = document.createElement('div');
+      Object.assign(wrap.style, {
+        position:'absolute', top:'50%', left:'50%', transform:'translate(-50%, -50%)',
+        zIndex:200, pointerEvents:'auto',
+        borderRadius:'18px', padding:'14px',
+        boxShadow: styleTask?.neon ? ('0 0 18px ' + (styleTask.borderColor || '#fff')) : '0 6px 16px rgba(0,0,0,0.3)'
+      });
+      if (styleTask?.bgColor) applyBgWithOpacity(wrap, styleTask.bgColor, (typeof styleTask.opacity === 'number' ? styleTask.opacity : 1));
+      else wrap.style.background = 'rgba(0,0,0,0.55)';
+      if (styleTask?.borderColor) wrap.style.border = '2px solid ' + styleTask.borderColor;
+
+      const img = document.createElement('img');
+      img.src = raw.image;
+      Object.assign(img.style, { maxWidth:'75vw', maxHeight:'75vh', borderRadius:'14px', display:'block' });
+      wrap.appendChild(img);
+
+      const doneBtn = document.createElement('button');
+      doneBtn.textContent = t('done');
+      Object.assign(doneBtn.style,{
+        marginTop:'12px',
+        padding:'10px 18px',
+        borderRadius:'999px',
+        border:'none',
+        cursor:'pointer',
+        fontWeight:'900'
+      });
+      wrap.appendChild(doneBtn);
+
+      doneBtn.addEventListener('click', () => {
+        wrap.remove();
+        onDone && onDone();
+      });
+
+      root.appendChild(wrap);
+      return;
+    }
+
+    // Режим «собери предложение»
+    if (orderMode && typeof raw === 'string' && raw && !raw.includes('::')) {
+      showOrderSentence(raw, onDone);
+      return;
+    }
+
+    const parts = String(raw).split("::");
+    const question = (parts[0] || raw).trim();
+    const options = parts.slice(1).map(s => s.trim()).filter(Boolean);
+
+    const msg = makeTaskCardBase();
+    msg.style.textAlign = 'center';
+
     // Вопрос
     const q = document.createElement('div');
     q.className = 'task-question';
     q.innerHTML = question || `<b>Task ${id}</b>`;
     q.style.marginBottom = '16px';
+    q.style.fontWeight = '900';
     msg.appendChild(q);
 
     if (options.length === 0) {
-      // просто текст → закрываем по клику
-      msg.style.cursor = 'pointer';
-      msg.addEventListener('click', () => {
-        msg.remove();
-        if (popped === total && !finalUnlocked) {
-          finalUnlocked = true;
-          showFinal();
-        }
+      // TEXT: устный ответ → кнопка Done
+      const doneBtn = document.createElement('button');
+      doneBtn.textContent = t('done');
+      Object.assign(doneBtn.style, {
+        padding: '10px 18px',
+        borderRadius: '999px',
+        border: 'none',
+        fontSize: 'inherit',
+        fontWeight: '900',
+        cursor: 'pointer',
+        background: 'rgba(255,255,255,0.92)',
+        color: '#2d3436'
       });
+      doneBtn.addEventListener('click', () => {
+        msg.remove();
+        onDone && onDone();
+      });
+      msg.appendChild(doneBtn);
+
     } else if (options.length === 1) {
-      // 📝 ВПИСАТЬ ОТВЕТ
+      // INPUT
       const correct = options[0].toLowerCase();
 
       const input = document.createElement('input');
       Object.assign(input.style, {
         width: '100%',
-        padding: '8px 10px',
-        borderRadius: '10px',
+        padding: '10px 12px',
+        borderRadius: '12px',
         border: 'none',
         marginBottom: '10px',
-        fontSize: '18px',
+        fontSize: 'inherit',
+        fontWeight: '700',
         color: '#2d3436'
       });
       input.placeholder = t('inputPlaceholder');
@@ -709,20 +787,21 @@ if (line) {
       const btn = document.createElement('button');
       btn.textContent = t('btnOk');
       Object.assign(btn.style, {
-        padding: '8px 18px',
+        padding: '10px 18px',
         borderRadius: '999px',
         border: 'none',
-        fontSize: '16px',
-        fontWeight: 'bold',
+        fontSize: 'inherit',
+        fontWeight: '900',
         cursor: 'pointer',
-        background: '#fff',
-        color: '#0984e3',
+        background: 'rgba(255,255,255,0.92)',
+        color: '#2d3436',
         marginBottom: '8px'
       });
       msg.appendChild(btn);
 
       const fb = document.createElement('div');
-      fb.style.minHeight = '24px';
+      fb.style.minHeight = '28px';
+      fb.style.fontWeight = '900';
       msg.appendChild(fb);
 
       function checkAnswer() {
@@ -732,11 +811,8 @@ if (line) {
           fb.textContent = t('correct');
           setTimeout(() => {
             msg.remove();
-            if (popped === total && !finalUnlocked) {
-              finalUnlocked = true;
-              showFinal();
-            }
-          }, 500);
+            onDone && onDone();
+          }, 450);
         } else {
           fb.textContent = t('wrong');
         }
@@ -748,26 +824,27 @@ if (line) {
       });
 
     } else {
-      // ❓ КВИЗ: несколько вариантов, первый = правильный
+      // QUIZ
       const correct = options[0];
       const shuffled = shuffle([...options]);
 
       const list = document.createElement('div');
       list.style.display = 'flex';
       list.style.flexDirection = 'column';
-      list.style.gap = '8px';
+      list.style.gap = '10px';
       list.style.marginTop = '8px';
 
       shuffled.forEach(opt => {
         const btn = document.createElement('button');
         btn.textContent = opt;
         Object.assign(btn.style, {
-          padding: '8px 10px',
+          padding: '12px 14px',
           borderRadius: '999px',
           border: 'none',
-          fontSize: '16px',
+          fontSize: 'inherit',        // НЕ меньше текста задания
+          fontWeight: '900',
           cursor: 'pointer',
-          background: 'rgba(255,255,255,0.9)',
+          background: 'rgba(255,255,255,0.92)',
           color: '#2d3436'
         });
         btn.addEventListener('click', () => {
@@ -776,11 +853,8 @@ if (line) {
             btn.style.color = '#fff';
             setTimeout(() => {
               msg.remove();
-              if (popped === total && !finalUnlocked) {
-                finalUnlocked = true;
-                showFinal();
-              }
-            }, 500);
+              onDone && onDone();
+            }, 450);
           } else {
             btn.style.background = '#d63031';
             btn.style.color = '#fff';
@@ -855,15 +929,14 @@ if (line) {
       }
 
       // Текст фидбека
-          const label = document.createElement('div');
+      const label = document.createElement('div');
       label.innerHTML = finalText || '🎉 Well done!';
       Object.assign(label.style, {
         position: 'absolute',
-        // поднимаем текст выше, чтобы не закрывал картинку
         top: '18%',
         left: '50%',
         transform: 'translate(-50%, -50%) scale(0.85)',
-        fontSize: '28px',
+        fontSize: (styleTask?.fontSize ? (styleTask.fontSize + 'px') : '28px'), // одинаковая база с заданиями
         fontWeight: 'bold',
         color: '#fff',
         padding: '14px 26px',
@@ -875,18 +948,15 @@ if (line) {
         pointerEvents: 'none',
         textShadow: '2px 2px 6px rgba(0,0,0,0.4)',
         animation: 'popUp 0.7s ease-out forwards',
-        maxWidth: '70vw'
+        maxWidth: '70vw',
+        textAlign:'center'
       });
 
       // применяем стили фидбека из редактора
       if (styleFeedback){
-        if (styleFeedback.borderColor) {
-          label.style.border = '2px solid ' + styleFeedback.borderColor;
-        }
-        if (styleFeedback.textColor) {
-          label.style.color = styleFeedback.textColor;
-        if (styleFeedback.bgColor) { label.style.background = styleFeedback.bgColor; }
-        }
+        if (styleFeedback.bgColor) label.style.background = styleFeedback.bgColor;
+        if (styleFeedback.borderColor) label.style.border = '2px solid ' + styleFeedback.borderColor;
+        if (styleFeedback.textColor) label.style.color = styleFeedback.textColor;
         if (styleFeedback.neon) {
           const glow = styleFeedback.borderColor || '#ffffff';
           label.style.boxShadow = `0 0 20px ${glow}`;
