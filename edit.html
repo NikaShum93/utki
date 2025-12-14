@@ -33,8 +33,15 @@
       background:var(--card); border:1px solid var(--stroke); border-radius:14px;
       padding:18px; box-shadow:0 0 28px rgba(255,215,0,.06);
     }
-    .card h2{margin:0 0 14px; font-size:18px; color:var(--ui-acc)}
-    label{display:block; margin:12px 0 8px; font-size:15px; color:#fff; font-weight:600}
+    .card h2{
+      margin:0 0 14px; font-size:18px; color:var(--ui-acc);
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    label{
+      display:block; margin:12px 0 8px; font-size:15px; color:#fff; font-weight:600;
+      line-height:1.25;
+    }
     input[type=text], input[type=number], input[type=url], textarea, select{
       width:100%; background:#101010; color:#fff; border:1px solid #3a3a3a;
       border-radius:10px; padding:10px 12px; font-size:15px;
@@ -44,6 +51,9 @@
     input:focus, textarea:focus, select:focus{
       border-color:#4b4b4b; box-shadow:0 0 0 3px rgba(255,215,0,.16);
     }
+    select{cursor:pointer}
+    input[type="checkbox"]{transform: translateY(1px);}
+
     .row{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap)}
     .result{
       display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;
@@ -53,6 +63,7 @@
       font-size:13px;
     }
     .hint{color:var(--muted); font-size:13px; margin-top:6px}
+    .small-hint{font-size:12px; color:var(--muted); margin-top:2px; line-height:1.35}
     button{
       background:linear-gradient(90deg,#ffbf00,#ffd700); color:#000; border:none;
       border-radius:12px; font-weight:800;
@@ -61,7 +72,13 @@
     }
     button:hover{transform:translateY(-1px); box-shadow:0 8px 26px rgba(255,215,0,.28)}
     .btn-ghost{background:transparent; color:#fff; border:1px solid #444}
-    .small-hint{font-size:12px; color:var(--muted); margin-top:2px}
+
+    /* мягкий divider между крупными блоками внутри одной карточки */
+    .divider{
+      height:1px;
+      background:rgba(255,255,255,.06);
+      margin:14px 0;
+    }
   </style>
   <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
 </head>
@@ -75,14 +92,17 @@
       <select id="language"></select>
 
       <div class="row" style="margin-top:10px">
-        <div style="display:flex; align-items:flex-end;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
           <label style="margin:0;">
-            <input type="checkbox" id="orderMode"> Режим: собрать предложение из слов (для всех текстовых заданий без ответов)
+            <input type="checkbox" id="orderMode">
+            Режим: собрать предложение из слов (для всех текстовых заданий без ответов)
           </label>
-          <div class="small-hint">Если включено — любое задание без вариантов/ответа будет показано как «расставь слова по порядку».</div>
+          <div class="small-hint">
+            Если включено — любое задание без вариантов/ответа будет показано как «расставь слова по порядку».
+          </div>
         </div>
+        <div></div>
       </div>
-
 
       <label>Шрифт</label>
       <select id="font"></select>
@@ -96,7 +116,9 @@
       <label>Картинка фидбека (URL)</label>
       <input type="url" id="feedbackImage" placeholder="https://.../chest.png">
 
-      <h2 style="margin-top:14px">🔊 Звуки</h2>
+      <div class="divider"></div>
+
+      <h2 style="margin-top:0">🔊 Звуки</h2>
       <label>Звук лопания (URL)</label>
       <input type="url" id="popSound" placeholder="https://.../pop.mp3">
 
@@ -106,18 +128,26 @@
       <label>Звук ошибки (URL, опционально)</label>
       <input type="url" id="wrongSound" placeholder="https://.../wrong.mp3">
 
-      <h2 style="margin-top:14px">🎯 Задания</h2>
+      <div class="divider"></div>
+
+      <h2 style="margin-top:0">🎯 Задания</h2>
 
       <label>Вопросы (по одному на строке)</label>
       <textarea id="questions" placeholder="Сколько будет 2+2?&#10;Найди значение x в уравнении ..."></textarea>
 
       <label>Правильные ответы (по одному набору на строке)</label>
       <textarea id="correctAnswers" placeholder="4|четыре&#10;x=3|3"></textarea>
-      <div class="small-hint">На каждой строке — ответы для соответствующего вопроса, варианты через |. Можно оставить пустым, если вопрос без ответа.</div>
+      <div class="small-hint">
+        На каждой строке — ответы для соответствующего вопроса, варианты через |.
+        Можно оставить пустым, если вопрос без ответа.
+      </div>
 
       <label>Неправильные ответы (по одному набору на строке)</label>
       <textarea id="wrongAnswers" placeholder="3|5&#10;x=1|1"></textarea>
-      <div class="small-hint">На каждой строке — неправильноe для соответствующего вопроса, варианты через |. Можно оставить пустым.</div>
+      <div class="small-hint">
+        На каждой строке — неправильные варианты для соответствующего вопроса, варианты через |.
+        Можно оставить пустым.
+      </div>
 
       <label style="margin-top:10px;">
         <input type="checkbox" id="autoDistractors">
@@ -127,7 +157,32 @@
         Если для задания не указаны wrong-варианты, плагин подмешает distractors из правильных ответов других задач.
       </div>
 
-      <h2 style="margin-top:16px">🎨 Оформление задания</h2>
+      <!-- NEW: квиз-лимиты и добор -->
+      <div class="row" style="margin-top:12px">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="margin:0;">
+            <input type="checkbox" id="quizUseOtherCorrect">
+            В квизе добирать варианты из других правильных (если не хватает wrong)
+          </label>
+          <div class="small-hint">
+            Важно: это работает для квизов. Если вариантов всё равно меньше 2 — будет режим «вписать ответ».
+          </div>
+        </div>
+
+        <div>
+          <label>Количество вариантов в квизе</label>
+          <select id="quizMaxOptions">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+          </select>
+          <div class="small-hint">Рекомендую 4. Если вариантов не хватает — будет меньше.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 style="margin-top:0">🎨 Оформление задания</h2>
 
       <div class="row">
         <div>
@@ -163,7 +218,9 @@
         </div>
       </div>
 
-      <h2 style="margin-top:16px">💫 Оформление фидбека</h2>
+      <div class="divider"></div>
+
+      <h2 style="margin-top:0">💫 Оформление фидбека</h2>
 
       <div class="row">
         <div>
@@ -176,24 +233,26 @@
         </div>
       </div>
 
-       <div class="row">
-         <div>
-           <label>Фон текста фидбека</label>
-           <input type="color" id="feedbackBgColor" value="#131316">
-         </div>
-         <div style="display:flex; align-items:flex-end;">
-           <label style="margin:0;">
-             <input type="checkbox" id="feedbackEnabled" checked> Показывать финальный фидбек (сундук/картинка и текст)
-           </label>
-         </div>
-       </div>
-
+      <div class="row">
+        <div>
+          <label>Фон текста фидбека</label>
+          <input type="color" id="feedbackBgColor" value="#131316">
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <label style="margin:0;">
+            <input type="checkbox" id="feedbackEnabled" checked>
+            Показывать финальный фидбек (сундук/картинка и текст)
+          </label>
+        </div>
+      </div>
 
       <label style="margin-top:10px;">
         <input type="checkbox" id="feedbackNeon"> Неоновая рамка фидбека
       </label>
 
-      <h2 style="margin-top:16px">🚀 Публикация</h2>
+      <div class="divider"></div>
+
+      <h2 style="margin-top:0">🚀 Публикация</h2>
       <div class="row">
         <button id="saveBtn">💾 Сохранить и получить iframe</button>
         <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
@@ -246,7 +305,7 @@
       es: ["Poppins","Montserrat","Noto Sans","Open Sans"],
       de: ["Fira Sans","Montserrat","Noto Sans","Open Sans"],
       fr: ["Poppins","Montserrat","Noto Sans","Open Sans"],
-      it: ['Rubik','Inter','Noto Sans','Roboto','Arial'],
+      it: ["Rubik","Inter","Noto Sans","Roboto","Arial"],
       zh: ["Noto Sans SC","Noto Serif SC"],
       ja: ["Noto Sans JP","Noto Serif JP"]
     };
@@ -304,6 +363,8 @@
       const maxLen = Math.max(qLines.length, cLines.length, wLines.length);
       const tasks = [];
 
+      const isImageUrl = (s) => /^https?:\/\//i.test(s) && /\.(png|gif|jpe?g|webp)(\?.*)?$/i.test(s);
+
       for (let i=0; i<maxLen; i++){
         const q = (qLines[i] || '').trim();
         const cRaw = (cLines[i] || '').trim();
@@ -311,13 +372,11 @@
 
         if (!q && !cRaw && !wRaw) continue;
 
-         // Если в вопросе просто ссылка на PNG/GIF/JPG/WEBP — считаем это заданием-картинкой
-         const isImageUrl = (s) => /^https?:\/\//i.test(s) && /\.(png|gif|jpe?g|webp)(\?.*)?$/i.test(s);
-         if (q && !cRaw && !wRaw && isImageUrl(q)) {
-           tasks.push({ type:'image', image:q });
-           continue;
-         }
-
+        // Если в вопросе просто ссылка на PNG/GIF/JPG/WEBP — считаем это заданием-картинкой
+        if (q && !cRaw && !wRaw && isImageUrl(q)) {
+          tasks.push({ type:'image', image:q });
+          continue;
+        }
 
         const correct = cRaw
           ? cRaw.split('|').map(s=>s.trim()).filter(Boolean)
@@ -329,22 +388,25 @@
         tasks.push({ question: q, correct, wrong });
       }
 
-      const taskBgColor    = $('#taskBgColor').value;
-      const taskBorderColor= $('#taskBorderColor').value;
-      const taskTextColor  = $('#taskTextColor').value;
-      const taskBgOpacity  = parseFloat($('#taskBgOpacity').value) || 1;
-      const taskFontSize   = parseInt($('#taskFontSize').value) || 22;
-      const taskNeon       = $('#taskNeon').checked;
+      const taskBgColor     = $('#taskBgColor').value;
+      const taskBorderColor = $('#taskBorderColor').value;
+      const taskTextColor   = $('#taskTextColor').value;
+      const taskBgOpacity   = parseFloat($('#taskBgOpacity').value) || 1;
+      const taskFontSize    = parseInt($('#taskFontSize').value) || 22;
+      const taskNeon        = $('#taskNeon').checked;
 
       const feedbackBorderColor = $('#feedbackBorderColor').value;
       const feedbackTextColor   = $('#feedbackTextColor').value;
       const feedbackNeon        = $('#feedbackNeon').checked;
-       const feedbackBgColor     = $('#feedbackBgColor').value;
-       const feedbackEnabled     = $('#feedbackEnabled').checked;
-       const orderMode           = $('#orderMode').checked;
+      const feedbackBgColor     = $('#feedbackBgColor').value;
+      const feedbackEnabled     = $('#feedbackEnabled').checked;
+      const orderMode           = $('#orderMode').checked;
 
+      const autoDistractors     = $('#autoDistractors').checked;
 
-      const autoDistractors = $('#autoDistractors').checked;
+      // NEW:
+      const quizUseOtherCorrect = $('#quizUseOtherCorrect')?.checked || false;
+      const quizMaxOptions      = parseInt($('#quizMaxOptions')?.value || '4', 10);
 
       return {
         language: lang,
@@ -375,6 +437,11 @@
         finalFeedback,
         feedbackImage,
         autoDistractors,
+
+        // NEW: квиз-лимиты
+        quizUseOtherCorrect,
+        quizMaxOptions,
+
         feedbackEnabled,
         orderMode,
         tasks
