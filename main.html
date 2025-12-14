@@ -56,11 +56,7 @@
     }
 
     /* Вылет фидбека */
-   @keyframes popUp {
-  0%   { opacity: 0; transform: scale(0.7); }
-  60%  { opacity: 1; transform: scale(1.08); }
-  100% { opacity: 1; transform: scale(1); }
-}
+ @keyframes popUp {
 
 
     /* Разлет блёсток от сундука */
@@ -428,8 +424,8 @@ Object.assign(counter.style, {
       el.style.left = (Math.random() * (maxW - BUBBLE_SIZE)) + 'px';
       el.style.top  = (Math.random() * (maxH - BUBBLE_SIZE)) + 'px';
 
-      const dx = (Math.random()*2 - 1) * 1.5;
-      const dy = (Math.random()*2 - 1) * 1.5;
+      const dx = (Math.random()*2 - 1) * 0.8;
+      const dy = (Math.random()*2 - 1) * 0.8;
       const bubble = { el, dx, dy, id: i };
       bubbles.push(bubble);
 
@@ -498,11 +494,13 @@ Object.assign(counter.style, {
       if (y < 0) { y = 0; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
       if (y > H - BUBBLE_SIZE) { y = H - BUBBLE_SIZE; b.dy = -b.dy + (Math.random() - 0.5) * 0.4; }
 
-      if (Math.abs(b.dx) < 0.3) b.dx += (Math.random() - 0.5) * 0.5;
-      if (Math.abs(b.dy) < 0.3) b.dy += (Math.random() - 0.5) * 0.5;
+    if (Math.abs(b.dx) < 0.18) b.dx += (Math.random() - 0.5) * 0.18;
+if (Math.abs(b.dy) < 0.18) b.dy += (Math.random() - 0.5) * 0.18;
 
-      b.dx = Math.max(-1.5, Math.min(1.5, b.dx));
-      b.dy = Math.max(-1.5, Math.min(1.5, b.dy));
+
+     b.dx = Math.max(-0.9, Math.min(0.9, b.dx));
+b.dy = Math.max(-0.9, Math.min(0.9, b.dy));
+
 
       b.el.style.left = x + 'px';
       b.el.style.top  = y + 'px';
@@ -764,7 +762,10 @@ width: '100%',
 
    const resetBtn = document.createElement('button');
 resetBtn.className = 'kgb-btn';
+const resetBtn = document.createElement('button');
+resetBtn.className = 'kgb-btn';
 resetBtn.textContent = t('reset');
+
 Object.assign(resetBtn.style, {
   padding: '10px 18px',
   borderRadius: '999px',
@@ -773,9 +774,24 @@ Object.assign(resetBtn.style, {
   background: 'rgba(0,0,0,0.25)',
   color: 'inherit',
   fontWeight: '800',
-  fontSize: 'inherit',
-  transition: 'transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease',
+  fontSize: 'inherit'
 });
+
+const doneBtn = document.createElement('button');
+doneBtn.className = 'kgb-btn';
+doneBtn.textContent = t('done');
+
+Object.assign(doneBtn.style, {
+  padding: '10px 22px',
+  borderRadius: '999px',
+  border: 'none',
+  cursor: 'pointer',
+  background: 'rgba(255,255,255,0.95)',
+  color: '#2d3436',
+  fontWeight: '900',
+  fontSize: 'inherit'
+});
+
 resetBtn.addEventListener('mouseenter', () => {
   resetBtn.style.transform = 'translateY(-2px)';
   resetBtn.style.boxShadow = '0 10px 22px rgba(0,0,0,0.35)';
