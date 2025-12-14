@@ -56,20 +56,25 @@
     }
 
     /* Вылет фидбека */
- @keyframes popUp {
+/* Вылет фидбека */
+@keyframes popUp {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
+/* Разлет блёсток от сундука */
+@keyframes sparkFly {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + (var(--dx))),
+      calc(-50% + (var(--dy)))
+    ) scale(0.4);
+  }
+}
 
-    /* Разлет блёсток от сундука */
-    @keyframes sparkFly {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
-      100% {
-        opacity: 0;
-        transform: translate(
-          calc(-50% + (var(--dx))),
-          calc(-50% + (var(--dy)))
-        ) scale(0.4);
-      }
-    }
 
    @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.85); }
@@ -760,8 +765,7 @@ width: '100%',
       flexWrap: 'wrap'
     });
 
-   const resetBtn = document.createElement('button');
-resetBtn.className = 'kgb-btn';
+ 
 const resetBtn = document.createElement('button');
 resetBtn.className = 'kgb-btn';
 resetBtn.textContent = t('reset');
@@ -792,46 +796,16 @@ Object.assign(doneBtn.style, {
   fontSize: 'inherit'
 });
 
-resetBtn.addEventListener('mouseenter', () => {
-  resetBtn.style.transform = 'translateY(-2px)';
-  resetBtn.style.boxShadow = '0 10px 22px rgba(0,0,0,0.35)';
-  resetBtn.style.filter = 'brightness(1.05)';
-});
-resetBtn.addEventListener('mouseleave', () => {
-  resetBtn.style.transform = 'translateY(0)';
-  resetBtn.style.boxShadow = '';
-  resetBtn.style.filter = '';
-});
 resetBtn.addEventListener('click', () => {
   chipsWrap.innerHTML = '';
   shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
   fb.textContent = '';
 });
 
-const doneBtn = document.createElement('button');
-doneBtn.className = 'kgb-btn';
-doneBtn.textContent = t('done');
-Object.assign(doneBtn.style, {
-  padding: '10px 22px',
-  borderRadius: '999px',
-  border: 'none',
-  cursor: 'pointer',
-  background: 'rgba(255,255,255,0.95)',
-  color: '#2d3436',
-  fontWeight: '900',
-  fontSize: 'inherit',
-  transition: 'transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease',
-});
-doneBtn.addEventListener('mouseenter', () => {
-  doneBtn.style.transform = 'translateY(-2px)';
-  doneBtn.style.boxShadow = '0 10px 22px rgba(0,0,0,0.35)';
-  doneBtn.style.filter = 'brightness(1.05)';
-});
-doneBtn.addEventListener('mouseleave', () => {
-  doneBtn.style.transform = 'translateY(0)';
-  doneBtn.style.boxShadow = '';
-  doneBtn.style.filter = '';
-});
+function currentAnswer(){
+  const toks = Array.from(chipsWrap.children).map(el => el.textContent);
+  return joinTokens(toks);
+}
 
 doneBtn.addEventListener('click', () => {
   const got = normSpaces(currentAnswer());
@@ -852,7 +826,6 @@ doneBtn.addEventListener('click', () => {
 
 controls.appendChild(resetBtn);
 controls.appendChild(doneBtn);
-
 
     msg.appendChild(chipsWrap);
     msg.appendChild(controls);
