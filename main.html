@@ -728,215 +728,237 @@
   // ----------------------
   // ORDER MODE — перетаскивание слов (без скроллов, перенос, кнопки снизу, ширина авто до max)
   // ----------------------
-  function showOrderSentence(sentence, onDone){
-    const originalTokens = tokenizeSentence(sentence);
-    const target = joinTokens(originalTokens);
+ function showOrderSentence(sentence, onDone){
+  const originalTokens = tokenizeSentence(sentence);
+  const target = joinTokens(originalTokens);
 
-    const msg = makeTaskCardBase();
-    msg.style.textAlign = 'center';
-msg.style.width = 'max-content';
-msg.style.boxSizing = 'border-box';
-    // ✅ max: ширина фрейма - 40px (по 20px с каждой стороны)
-    msg.style.maxWidth = 'calc(100vw - 40px)';
+  const msg = makeTaskCardBase();
+  msg.style.textAlign = 'center';
 
-    // ✅ ширина "по контенту", но может расширяться при необходимости
-    msg.style.display = 'inline-flex';
-    msg.style.flexDirection = 'column';
-    msg.style.alignItems = 'center';
-    msg.style.gap = '12px';
-    msg.style.overflow = 'visible';
+  // ✅ ДЕЛАЕМ КАРТОЧКУ ШИРОКОЙ (чтобы не было пустоты по бокам)
+  msg.style.boxSizing = 'border-box';
+  msg.style.width = 'calc(100vw - 40px)';   // занимает почти всю ширину
+  msg.style.maxWidth = 'calc(100vw - 40px)';
 
-    msg.style.paddingLeft = '18px';
-    msg.style.paddingRight = '18px';
-    msg.style.paddingTop = '16px';
-    msg.style.paddingBottom = '16px';
+  msg.style.display = 'flex';
+  msg.style.flexDirection = 'column';
+  msg.style.alignItems = 'center';
+  msg.style.gap = '12px';
+  msg.style.overflow = 'visible';
 
-    const chipsWrap = document.createElement('div');
-    Object.assign(chipsWrap.style, {
-      display: 'flex',
-      flexWrap: 'wrap',              // ✅ перенос строк
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '10px',
-      padding: '10px 10px',
-      borderRadius: '16px',
-      background: 'rgba(0,0,0,0.18)',
-      boxSizing: 'border-box',
+  msg.style.paddingLeft = '18px';
+  msg.style.paddingRight = '18px';
+  msg.style.paddingTop = '16px';
+  msg.style.paddingBottom = '16px';
 
-      // ✅ ключ: ширина по содержимому, но не больше max
-     width: 'max-content',
-maxWidth: '100%',
+  const chipsWrap = document.createElement('div');
+  Object.assign(chipsWrap.style, {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 58px',        // ✅ место под иконки слева/справа
+    borderRadius: '16px',
+    background: 'rgba(0,0,0,0.18)',
+    boxSizing: 'border-box',
+    width: '100%',               // ✅ растягиваем на всю ширину карточки
+    maxWidth: '100%',
+    overflow: 'visible'
+  });
 
-      overflow: 'visible'
-    });
+  let dragSrcIndex = null;
 
-    let dragSrcIndex = null;
-
-    function makeChip(text){
-      const chip = document.createElement('div');
-      chip.textContent = text;
-      Object.assign(chip.style, {
-        padding: '10px 16px',
-        borderRadius: '999px',
-        background: 'rgba(255,255,255,0.95)',
-        color: '#2d3436',
-        fontWeight: '700',
-        fontSize: 'inherit',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
-        userSelect: 'none',
-        cursor: 'grab',
-        whiteSpace: 'nowrap',
-        transform: 'translateZ(0)',
-        transition: 'transform 0.12s ease, box-shadow 0.12s ease'
-      });
-      chip.setAttribute('draggable', 'true');
-
-      chip.addEventListener('dragstart', () => {
-        dragSrcIndex = Array.from(chipsWrap.children).indexOf(chip);
-        chip.style.opacity = '0.6';
-        chip.style.transform = 'scale(0.96)';
-      });
-
-      chip.addEventListener('dragend', () => {
-        chip.style.opacity = '1';
-        chip.style.transform = 'scale(1)';
-      });
-
-      chip.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        chip.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.6)';
-      });
-
-      chip.addEventListener('dragleave', () => {
-        chip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.25)';
-      });
-
-      chip.addEventListener('drop', (e) => {
-        e.preventDefault();
-        chip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.25)';
-
-        if (dragSrcIndex === null) return;
-
-        const children = Array.from(chipsWrap.children);
-        const src = children[dragSrcIndex];
-        const tgtIndex = children.indexOf(chip);
-        if (!src || tgtIndex === -1 || src === chip) {
-          dragSrcIndex = null;
-          return;
-        }
-
-        if (dragSrcIndex < tgtIndex) {
-          chipsWrap.insertBefore(src, chip.nextSibling);
-        } else {
-          chipsWrap.insertBefore(src, chip);
-        }
-
-        dragSrcIndex = null;
-      });
-
-      chip.addEventListener('mousedown', () => {
-        chip.style.transform = 'scale(0.97)';
-        chip.style.cursor = 'grabbing';
-      });
-      chip.addEventListener('mouseup', () => {
-        chip.style.transform = 'scale(1)';
-        chip.style.cursor = 'grab';
-      });
-
-      return chip;
-    }
-
-    const shuffled = shuffle([...originalTokens]);
-    shuffled.forEach(tok => chipsWrap.appendChild(makeChip(tok)));
-
-    // ✅ кнопки снизу (горизонтально)
-    const controlsRow = document.createElement('div');
-    Object.assign(controlsRow.style, {
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '10px',
-      marginTop: '2px'
-    });
-
-    const resetBtn = document.createElement('button');
-    resetBtn.className = 'kgb-btn';
-    resetBtn.textContent = t('reset');
-    Object.assign(resetBtn.style, {
-      padding: '10px 18px',
+  function makeChip(text){
+    const chip = document.createElement('div');
+    chip.textContent = text;
+    Object.assign(chip.style, {
+      padding: '10px 16px',
       borderRadius: '999px',
-      border: 'none',
-      cursor: 'pointer',
-      background: 'rgba(0,0,0,0.25)',
-      color: 'inherit',
-      fontWeight: '800',
-      fontSize: 'inherit',
-      whiteSpace: 'nowrap'
-    });
-
-    const doneBtn = document.createElement('button');
-    doneBtn.className = 'kgb-btn';
-    doneBtn.textContent = t('done');
-    Object.assign(doneBtn.style, {
-      padding: '10px 22px',
-      borderRadius: '999px',
-      border: 'none',
-      cursor: 'pointer',
       background: 'rgba(255,255,255,0.95)',
       color: '#2d3436',
-      fontWeight: '900',
+      fontWeight: '700',
       fontSize: 'inherit',
-      whiteSpace: 'nowrap'
+      boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
+      userSelect: 'none',
+      cursor: 'grab',
+      whiteSpace: 'nowrap',
+      transform: 'translateZ(0)',
+      transition: 'transform 0.12s ease, box-shadow 0.12s ease'
+    });
+    chip.setAttribute('draggable', 'true');
+
+    chip.addEventListener('dragstart', () => {
+      dragSrcIndex = Array.from(chipsWrap.children).indexOf(chip);
+      chip.style.opacity = '0.6';
+      chip.style.transform = 'scale(0.96)';
     });
 
-    const fb = document.createElement('div');
-    fb.style.minHeight = '24px';
-    fb.style.fontWeight = '800';
-    fb.style.textAlign = 'center';
-    fb.style.marginTop = '6px';
-
-    resetBtn.addEventListener('click', () => {
-      chipsWrap.innerHTML = '';
-      shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
-      fb.textContent = '';
+    chip.addEventListener('dragend', () => {
+      chip.style.opacity = '1';
+      chip.style.transform = 'scale(1)';
     });
 
-    function currentAnswer(){
-      const toks = Array.from(chipsWrap.children).map(el => el.textContent);
-      return joinTokens(toks);
-    }
+    chip.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      chip.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.6)';
+    });
 
-    doneBtn.addEventListener('click', () => {
-      const got = normSpaces(currentAnswer());
-      const want = normSpaces(target);
-      if (!got) { fb.textContent = ''; return; }
+    chip.addEventListener('dragleave', () => {
+      chip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.25)';
+    });
 
-      if (got === want) {
-        fb.textContent = t('correct');
-        launchFirework(msg);
-        setTimeout(() => {
-          msg.remove();
-          onDone && onDone();
-        }, 450);
-      } else {
-        fb.textContent = t('wrong');
+    chip.addEventListener('drop', (e) => {
+      e.preventDefault();
+      chip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.25)';
+
+      if (dragSrcIndex === null) return;
+
+      const children = Array.from(chipsWrap.children);
+      const src = children[dragSrcIndex];
+      const tgtIndex = children.indexOf(chip);
+      if (!src || tgtIndex === -1 || src === chip) {
+        dragSrcIndex = null;
+        return;
       }
+
+      if (dragSrcIndex < tgtIndex) chipsWrap.insertBefore(src, chip.nextSibling);
+      else chipsWrap.insertBefore(src, chip);
+
+      dragSrcIndex = null;
     });
 
-    controlsRow.appendChild(resetBtn);
-    controlsRow.appendChild(doneBtn);
+    chip.addEventListener('mousedown', () => {
+      chip.style.transform = 'scale(0.97)';
+      chip.style.cursor = 'grabbing';
+    });
+    chip.addEventListener('mouseup', () => {
+      chip.style.transform = 'scale(1)';
+      chip.style.cursor = 'grab';
+    });
 
-    msg.appendChild(chipsWrap);
-    msg.appendChild(controlsRow);
-    msg.appendChild(fb);
-
-    if (window.MathJax && window.MathJax.typesetPromise) {
-      window.MathJax.typesetPromise([msg]).catch(() => {});
-    }
-
-    root.appendChild(msg);
+    return chip;
   }
+
+  const shuffled = shuffle([...originalTokens]);
+  shuffled.forEach(tok => chipsWrap.appendChild(makeChip(tok)));
+
+  // ✅ зона чипов + иконки слева/справа (по центру по высоте)
+  const chipsZone = document.createElement('div');
+  Object.assign(chipsZone.style, {
+    position: 'relative',
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  });
+
+  const resetIcon = document.createElement('div');
+  resetIcon.innerHTML = '↺';
+  Object.assign(resetIcon.style, {
+    position: 'absolute',
+    left: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '34px',
+    height: '34px',
+    borderRadius: '999px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+    cursor: 'pointer',
+    color: '#fff',
+    background: 'rgba(0,0,0,0.32)',
+    boxShadow: '0 6px 14px rgba(0,0,0,0.25)',
+    transition: 'transform .15s ease, box-shadow .15s ease, filter .15s ease'
+  });
+
+  const doneIcon = document.createElement('div');
+  doneIcon.innerHTML = '✓';
+  Object.assign(doneIcon.style, {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '38px',
+    height: '38px',
+    borderRadius: '999px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    cursor: 'pointer',
+    color: '#2d3436',
+    background: 'rgba(255,255,255,0.95)',
+    boxShadow: '0 8px 18px rgba(0,0,0,0.3)',
+    transition: 'transform .15s ease, box-shadow .15s ease, filter .15s ease'
+  });
+
+  [resetIcon, doneIcon].forEach(icon => {
+    icon.addEventListener('mouseenter', () => {
+      icon.style.transform = 'translateY(-50%) scale(1.08)';
+      icon.style.boxShadow = '0 10px 22px rgba(0,0,0,0.35)';
+      icon.style.filter = 'brightness(1.05)';
+    });
+    icon.addEventListener('mouseleave', () => {
+      icon.style.transform = 'translateY(-50%) scale(1)';
+      icon.style.boxShadow = icon === doneIcon
+        ? '0 8px 18px rgba(0,0,0,0.3)'
+        : '0 6px 14px rgba(0,0,0,0.25)';
+      icon.style.filter = 'none';
+    });
+  });
+
+  chipsZone.appendChild(chipsWrap);
+  chipsZone.appendChild(resetIcon);
+  chipsZone.appendChild(doneIcon);
+
+  const fb = document.createElement('div');
+  fb.style.minHeight = '24px';
+  fb.style.fontWeight = '800';
+  fb.style.textAlign = 'center';
+  fb.style.marginTop = '6px';
+
+  // ✅ ВОТ ТУТ БЛЯДЬ `currentAnswer()` — теперь он есть
+  function currentAnswer(){
+    const toks = Array.from(chipsWrap.children).map(el => el.textContent);
+    return joinTokens(toks);
+  }
+
+  resetIcon.addEventListener('click', () => {
+    chipsWrap.innerHTML = '';
+    shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
+    fb.textContent = '';
+  });
+
+  doneIcon.addEventListener('click', () => {
+    const got = normSpaces(currentAnswer());
+    const want = normSpaces(target);
+    if (!got) return;
+
+    if (got === want) {
+      fb.textContent = t('correct');
+      launchFirework(msg);
+      setTimeout(() => {
+        msg.remove();
+        onDone && onDone();
+      }, 450);
+    } else {
+      fb.textContent = t('wrong');
+    }
+  });
+
+  msg.appendChild(chipsZone);
+  msg.appendChild(fb);
+
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetPromise([msg]).catch(() => {});
+  }
+
+  root.appendChild(msg);
+}
+
 
   function showMessage(id, onDone) {
     const raw = TASKS[id] || "";
