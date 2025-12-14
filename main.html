@@ -553,13 +553,24 @@
     const target = joinTokens(originalTokens);
 
     const msg = makeTaskCardBase();
-    msg.style.textAlign = 'center';
-    msg.style.maxWidth = '80vw';
+       msg.style.textAlign = 'center';
+
+    // авто-ширина под контент
+    msg.style.width = 'fit-content';
+    msg.style.maxWidth = '92vw';          // ❗ запас от краёв экрана
+    msg.style.boxSizing = 'border-box';
+
+    // визуальные отступы внутри
+    msg.style.paddingLeft = '22px';
+    msg.style.paddingRight = '22px';
+
     msg.style.display = 'flex';
     msg.style.flexDirection = 'column';
     msg.style.alignItems = 'center';
     msg.style.gap = '14px';
     msg.style.overflow = 'visible';
+
+
 
     // зона с фишками
     const chipsWrap = document.createElement('div');
