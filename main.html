@@ -545,219 +545,197 @@
 // ----------------------
 // ORDER MODE — Wordwall-style: одна строка слов, перетаскивание МЕЖДУ СОБОЙ
 // ----------------------
-function showOrderSentence(sentence, onDone){
-  const originalTokens = tokenizeSentence(sentence);
-  const target = joinTokens(originalTokens);
+  // ----------------------
+  // ORDER MODE — перетаскивание слов как в wordwall
+  // ----------------------
+  function showOrderSentence(sentence, onDone){
+    const originalTokens = tokenizeSentence(sentence);
+    const target = joinTokens(originalTokens);
 
-  const msg = makeTaskCardBase();
-  msg.style.textAlign = 'center';
-  msg.style.maxWidth = '86vw';
+    const msg = makeTaskCardBase();
+    msg.style.textAlign = 'center';
+    msg.style.maxWidth = '80vw';
+    msg.style.display = 'flex';
+    msg.style.flexDirection = 'column';
+    msg.style.alignItems = 'center';
+    msg.style.gap = '14px';
+    msg.style.overflow = 'visible';
 
-  // Контейнер с “словами” — ОДНА горизонтальная дорожка
-  const rail = document.createElement('div');
-  Object.assign(rail.style, {
-    display: 'flex',
-    flexWrap: 'nowrap',            // важно: горизонтально
-    gap: '10px',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    padding: '12px 12px',
-    borderRadius: '16px',
-    background: 'rgba(0,0,0,0.18)',
-    overflowX: 'auto',             // если не влезает — скролл по X
-    overflowY: 'hidden',
-    whiteSpace: 'nowrap',
-    WebkitOverflowScrolling: 'touch',
-    scrollBehavior: 'smooth',
-    userSelect: 'none'
-  });
-
-  // подсказка (минимальная)
-  const hint = document.createElement('div');
-  hint.textContent = 'Drag words to reorder, then press Done';
-  Object.assign(hint.style, {
-    margin: '6px 0 12px',
-    opacity: '.85',
-    fontWeight: '800',
-    fontSize: '0.9em'
-  });
-
-  // фидбек под дорожкой
-  const fb = document.createElement('div');
-  fb.style.marginTop = '10px';
-  fb.style.minHeight = '28px';
-  fb.style.fontWeight = '900';
-
-  // кнопки
-  const controls = document.createElement('div');
-  Object.assign(controls.style, {
-    display: 'flex',
-    gap: '10px',
-    justifyContent: 'center',
-    marginTop: '12px',
-    flexWrap: 'wrap'
-  });
-
-  const resetBtn = document.createElement('button');
-  resetBtn.type = 'button';
-  resetBtn.textContent = t('reset');
-  Object.assign(resetBtn.style, {
-    padding:'10px 16px',
-    borderRadius:'999px',
-    border:'none',
-    cursor:'pointer',
-    background:'rgba(0,0,0,0.25)',
-    color:'inherit',
-    fontWeight:'900',
-    fontSize:'inherit'
-  });
-
-  const doneBtn = document.createElement('button');
-  doneBtn.type = 'button';
-  doneBtn.textContent = t('done');
-  Object.assign(doneBtn.style, {
-    padding:'10px 18px',
-    borderRadius:'999px',
-    border:'none',
-    cursor:'pointer',
-    background:'rgba(255,255,255,0.92)',
-    color:'#2d3436',
-    fontWeight:'900',
-    fontSize:'inherit'
-  });
-
-  // --- оформление “чипов” в цвет рамки задания ---
-  const accent = (styleTask?.borderColor || '#00f2fe');
-  const chipBg = 'rgba(255,255,255,0.92)';
-
-  function makeChip(text){
-    const chip = document.createElement('div');
-    chip.className = 'kgb-chip';
-    chip.textContent = text;
-    chip.setAttribute('draggable', 'true');
-
-    Object.assign(chip.style, {
-      display: 'inline-flex',
-      alignItems: 'center',
+    // зона с фишками
+    const chipsWrap = document.createElement('div');
+    Object.assign(chipsWrap.style, {
+      display: 'flex',
+      flexWrap: 'wrap',
       justifyContent: 'center',
-      padding: '10px 14px',
-      borderRadius: '12px',
-      background: chipBg,
-      color: '#111',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '12px 10px',
+      borderRadius: '16px',
+      background: 'rgba(0,0,0,0.18)',
+      maxWidth: '100%',
+      boxSizing: 'border-box'
+    });
+
+    let dragSrcIndex = null;
+
+    function makeChip(text){
+      const chip = document.createElement('div');
+      chip.textContent = text;
+      Object.assign(chip.style, {
+        padding: '10px 16px',
+        borderRadius: '999px',
+        background: 'rgba(255,255,255,0.95)',
+        color: '#2d3436',
+        fontWeight: '700',
+        fontSize: 'inherit',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
+        userSelect: 'none',
+        cursor: 'grab',
+        whiteSpace: 'nowrap',
+        transform: 'translateZ(0)',
+        transition: 'transform 0.12s ease, box-shadow 0.12s ease'
+      });
+      chip.setAttribute('draggable', 'true');
+
+      chip.addEventListener('dragstart', (e) => {
+        dragSrcIndex = Array.from(chipsWrap.children).indexOf(chip);
+        chip.style.opacity = '0.6';
+        chip.style.transform = 'scale(0.96)';
+      });
+
+      chip.addEventListener('dragend', () => {
+        chip.style.opacity = '1';
+        chip.style.transform = 'scale(1)';
+      });
+
+      chip.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        chip.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.6)';
+      });
+
+      chip.addEventListener('dragleave', () => {
+        chip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.25)';
+      });
+
+      chip.addEventListener('drop', (e) => {
+        e.preventDefault();
+        chip.style.boxShadow = '0 4px 10px rgba(0,0,0,0.25)';
+
+        if (dragSrcIndex === null) return;
+
+        const children = Array.from(chipsWrap.children);
+        const src = children[dragSrcIndex];
+        const tgtIndex = children.indexOf(chip);
+        if (!src || tgtIndex === -1 || src === chip) {
+          dragSrcIndex = null;
+          return;
+        }
+
+        if (dragSrcIndex < tgtIndex) {
+          chipsWrap.insertBefore(src, chip.nextSibling);
+        } else {
+          chipsWrap.insertBefore(src, chip);
+        }
+
+        dragSrcIndex = null;
+      });
+
+      chip.addEventListener('mousedown', () => {
+        chip.style.transform = 'scale(0.97)';
+        chip.style.cursor = 'grabbing';
+      });
+      chip.addEventListener('mouseup', () => {
+        chip.style.transform = 'scale(1)';
+        chip.style.cursor = 'grab';
+      });
+
+      return chip;
+    }
+
+    // стартовое перемешивание
+    const shuffled = shuffle([...originalTokens]);
+    shuffled.forEach(tok => chipsWrap.appendChild(makeChip(tok)));
+
+    const fb = document.createElement('div');
+    fb.style.minHeight = '28px';
+    fb.style.fontWeight = '800';
+    fb.style.marginTop = '6px';
+
+    const controls = document.createElement('div');
+    Object.assign(controls.style, {
+      display: 'flex',
+      gap: '10px',
+      justifyContent: 'center',
+      marginTop: '6px',
+      flexWrap: 'wrap'
+    });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = t('reset');
+    Object.assign(resetBtn.style, {
+      padding: '10px 18px',
+      borderRadius: '999px',
+      border: 'none',
+      cursor: 'pointer',
+      background: 'rgba(0,0,0,0.25)',
+      color: 'inherit',
+      fontWeight: '800',
+      fontSize: 'inherit'
+    });
+
+    const doneBtn = document.createElement('button');
+    doneBtn.textContent = t('done');
+    Object.assign(doneBtn.style, {
+      padding: '10px 22px',
+      borderRadius: '999px',
+      border: 'none',
+      cursor: 'pointer',
+      background: 'rgba(255,255,255,0.95)',
+      color: '#2d3436',
       fontWeight: '900',
-      fontSize: 'inherit',
-      border: `2px solid ${accent}`,
-      boxShadow: `0 10px 18px rgba(0,0,0,.25), 0 0 12px ${accent}33`, // объем + легкое свечение
-      transform: 'translateZ(0)',
-      transition: 'transform .14s ease, box-shadow .14s ease',
-      cursor: 'grab'
+      fontSize: 'inherit'
     });
 
-    chip.addEventListener('mouseenter', () => {
-      chip.style.transform = 'translateY(-1px)';
-      chip.style.boxShadow = `0 14px 22px rgba(0,0,0,.28), 0 0 16px ${accent}55`;
-    });
-    chip.addEventListener('mouseleave', () => {
-      chip.style.transform = 'translateY(0)';
-      chip.style.boxShadow = `0 10px 18px rgba(0,0,0,.25), 0 0 12px ${accent}33`;
-    });
-
-    // drag state
-    chip.addEventListener('dragstart', (e) => {
-      chip.classList.add('dragging');
-      chip.style.opacity = '0.55';
-      chip.style.cursor = 'grabbing';
-      try{
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', 'chip'); // просто чтобы не ругалось
-      }catch(_){}
+    resetBtn.addEventListener('click', () => {
+      chipsWrap.innerHTML = '';
+      shuffle([...originalTokens]).forEach(tok => chipsWrap.appendChild(makeChip(tok)));
       fb.textContent = '';
     });
 
-    chip.addEventListener('dragend', () => {
-      chip.classList.remove('dragging');
-      chip.style.opacity = '1';
-      chip.style.cursor = 'grab';
+    function currentAnswer(){
+      const toks = Array.from(chipsWrap.children).map(el => el.textContent);
+      return joinTokens(toks);
+    }
+
+    doneBtn.addEventListener('click', () => {
+      const got = normSpaces(currentAnswer());
+      const want = normSpaces(target);
+      if (!got) { fb.textContent = ''; return; }
+
+      if (got === want){
+        fb.textContent = t('correct');
+        setTimeout(() => {
+          msg.remove();
+          onDone && onDone();
+        }, 450);
+      } else {
+        fb.textContent = t('wrong');
+      }
     });
 
-    return chip;
-  }
+    controls.appendChild(resetBtn);
+    controls.appendChild(doneBtn);
 
-  // Алгоритм вставки “перед/после” как в Wordwall
-  function getDragAfterElement(container, x){
-    const items = [...container.querySelectorAll('.kgb-chip:not(.dragging)')];
-    return items.reduce((closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = x - (box.left + box.width / 2);
-      if (offset < 0 && offset > closest.offset) {
-        return { offset, element: child };
-      } else {
-        return closest;
-      }
-    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
-  }
+    msg.appendChild(chipsWrap);
+    msg.appendChild(controls);
+    msg.appendChild(fb);
 
-  rail.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const dragging = rail.querySelector('.dragging');
-    if (!dragging) return;
-
-    const after = getDragAfterElement(rail, e.clientX);
-    if (after == null) {
-      rail.appendChild(dragging);
-    } else {
-      rail.insertBefore(dragging, after);
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([msg]).catch(() => {});
     }
-  });
 
-  // наполняем: перемешанная дорожка
-  function fillShuffled(){
-    rail.innerHTML = '';
-    const shuffled = shuffle([...originalTokens]);
-    shuffled.forEach(tok => rail.appendChild(makeChip(tok)));
-    // в начале “подвинем” к старту
-    try { rail.scrollLeft = 0; } catch(_){}
+    root.appendChild(msg);
   }
-  fillShuffled();
-
-  function currentAnswer(){
-    const toks = [...rail.querySelectorAll('.kgb-chip')].map(x => x.textContent);
-    return joinTokens(toks);
-  }
-
-  resetBtn.addEventListener('click', () => {
-    fillShuffled();
-    fb.textContent = '';
-  });
-
-  doneBtn.addEventListener('click', () => {
-    const got = normSpaces(currentAnswer());
-    const want = normSpaces(target);
-
-    if (!got) return;
-
-    if (got === want){
-      fb.textContent = t('correct');
-      setTimeout(() => { msg.remove(); onDone && onDone(); }, 450);
-    } else {
-      fb.textContent = t('wrong');
-    }
-  });
-
-  // Сборка UI
-  msg.appendChild(hint);
-  msg.appendChild(rail);
-  controls.appendChild(resetBtn);
-  controls.appendChild(doneBtn);
-  msg.appendChild(controls);
-  msg.appendChild(fb);
-
-  if (window.MathJax?.typesetPromise) {
-    window.MathJax.typesetPromise([msg]).catch(()=>{});
-  }
-
-  root.appendChild(msg);
-}
 
 
   function showMessage(id, onDone) {
