@@ -734,7 +734,8 @@
 
     const msg = makeTaskCardBase();
     msg.style.textAlign = 'center';
-
+msg.style.width = 'max-content';
+msg.style.boxSizing = 'border-box';
     // ✅ max: ширина фрейма - 40px (по 20px с каждой стороны)
     msg.style.maxWidth = 'calc(100vw - 40px)';
 
@@ -763,8 +764,9 @@
       boxSizing: 'border-box',
 
       // ✅ ключ: ширина по содержимому, но не больше max
-      width: 'fit-content',
-      maxWidth: 'calc(100vw - 60px)', // чуть меньше чем карточка, чтобы не упираться в край
+     width: 'max-content',
+maxWidth: '100%',
+
       overflow: 'visible'
     });
 
