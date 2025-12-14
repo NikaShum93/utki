@@ -541,10 +541,10 @@
     const msg = makeTaskCardBase();
        msg.style.textAlign = 'center';
 
-    // авто-ширина под контент
-    msg.style.width = 'fit-content';
-    msg.style.maxWidth = '92vw';          // ❗ запас от краёв экрана
-    msg.style.boxSizing = 'border-box';
+   msg.style.width = 'auto';
+msg.style.maxWidth = '92vw';
+msg.style.minWidth = '60vw';   // ← ВАЖНО
+
 
     // визуальные отступы внутри
     msg.style.paddingLeft = '22px';
@@ -562,8 +562,10 @@
    const chipsWrap = document.createElement('div');
 Object.assign(chipsWrap.style, {
   display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'center',
+ flexWrap: 'wrap',
+justifyContent: 'center',
+alignContent: 'center',
+width: '100%',
   alignItems: 'center',
   gap: '10px',
   padding: '12px 10px',
