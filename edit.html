@@ -3,343 +3,404 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Редактор — Utki</title>
+  <title>Редактор — Светлячки</title>
 
   <style>
     :root{
       --ui-acc:#ffd700;
-      --bg:#0d0d0d;
-      --card:#151515;
-      --ink:#eee;
-      --muted:#b7b7b7;
-      --stroke:#2a2a2a;
+      --ui-acc2:#ffbf00;
+      --bg:#0b0b0d;
+      --card:#121215;
+      --ink:#f1f1f1;
+      --muted:#b8b8b8;
+      --stroke:#26262a;
+      --soft:#17171b;
       --gap:16px;
 
-      --field:#101010;
-      --field-stroke:#3a3a3a;
-      --glow: rgba(255,215,0,.16);
+      --shadow: 0 0 30px rgba(255,215,0,.08);
+      --shadow2: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg); color:var(--ink);
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(255,215,0,.10), transparent 60%),
+                  radial-gradient(900px 500px at 80% 0%, rgba(0,240,255,.06), transparent 55%),
+                  var(--bg);
+      color:var(--ink);
       font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      display:flex; flex-direction:column;
+      display:flex;
+      flex-direction:column;
     }
 
     header{
-      display:flex; align-items:center; gap:12px;
-      padding:16px 20px;
+      position:sticky; top:0; z-index:5;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:14px 18px;
       border-bottom:1px solid var(--stroke);
-      position:sticky; top:0; background:var(--bg); z-index:3;
+      background: rgba(11,11,13,.88);
+      backdrop-filter: blur(10px);
     }
     header h1{
-      font-size:20px; margin:0; color:var(--ui-acc); font-weight:900;
+      margin:0;
+      font-size:18px;
+      font-weight:900;
       letter-spacing:.2px;
+      color:var(--ui-acc);
+      display:flex; align-items:center; gap:10px;
+    }
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.85);
     }
 
     main{
-      display:grid; grid-template-columns: 520px 1fr;
-      gap:22px; padding:20px; max-width:1500px; width:100%; margin:0 auto;
-      align-items:start;
+      display:grid;
+      grid-template-columns: 520px 1fr;
+      gap:22px;
+      padding:18px;
+      max-width:1560px;
+      width:100%;
+      margin:0 auto;
     }
 
     .card{
-      background:var(--card);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
       border:1px solid var(--stroke);
-      border-radius:14px;
-      padding:18px;
-      box-shadow:0 0 28px rgba(255,215,0,.06);
-      overflow:hidden;
-    }
-    .card h2{
-      margin:0 0 14px; font-size:18px; color:var(--ui-acc); font-weight:900;
-      padding-bottom:10px;
-      border-bottom:1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius);
+      padding:16px;
+      box-shadow: var(--shadow);
     }
 
+    .card h2{
+      margin:0 0 12px;
+      font-size:16px;
+      color:var(--ui-acc);
+      font-weight:900;
+      letter-spacing:.2px;
+      display:flex; align-items:center; gap:10px;
+    }
+
+    .section{
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(0,0,0,.18);
+      border-radius: 14px;
+      padding:14px;
+      margin-top:12px;
+    }
+    .section:first-child{margin-top:0}
+
     label{
-      display:block; margin:12px 0 8px; font-size:15px; color:#fff; font-weight:700;
+      display:block;
+      margin:10px 0 6px;
+      font-size:14px;
+      color:#fff;
+      font-weight:700;
       line-height:1.25;
     }
+
     input[type=text], input[type=number], input[type=url], textarea, select{
       width:100%;
-      background:var(--field);
+      background: #0f0f12;
       color:#fff;
-      border:1px solid var(--field-stroke);
-      border-radius:10px;
+      border:1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
       padding:10px 12px;
-      font-size:15px;
+      font-size:14px;
       outline:none;
       transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
     }
-    textarea{min-height:90px; resize:vertical}
+    textarea{min-height:86px; resize:vertical}
     input:focus, textarea:focus, select:focus{
-      border-color:#4b4b4b; box-shadow:0 0 0 3px var(--glow);
+      border-color: rgba(255,215,0,.55);
+      box-shadow: 0 0 0 3px rgba(255,215,0,.14);
     }
     select{cursor:pointer}
-    input[type="checkbox"]{transform: translateY(1px);}
+
+    input[type="checkbox"], input[type="radio"]{transform: translateY(1px);}
 
     .row{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap)}
-    .result{
-      display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;
-    }
-    .result textarea{
-      height:130px;
-      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:13px;
-    }
-    .hint{color:var(--muted); font-size:13px; margin-top:6px}
-    .small-hint{font-size:12px; color:var(--muted); margin-top:2px; line-height:1.35}
-
-    button{
-      background:linear-gradient(90deg,#ffbf00,#ffd700);
-      color:#000;
-      border:none;
-      border-radius:12px;
-      font-weight:900;
-      padding:12px 16px;
-      cursor:pointer;
-      transition:transform .15s ease, box-shadow .15s ease;
-      font-size:15px;
-      letter-spacing:.2px;
-      white-space:nowrap;
-    }
-    button:hover{transform:translateY(-1px); box-shadow:0 8px 26px rgba(255,215,0,.28)}
-    .btn-ghost{
-      background:transparent;
-      color:#fff;
-      border:1px solid #444;
-      font-weight:800;
-    }
-    .btn-ghost:hover{
-      box-shadow:0 8px 26px rgba(255,255,255,.08);
-      transform:translateY(-1px);
-    }
+    .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--gap)}
+    .small-hint{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.35}
+    .hint{color:var(--muted); font-size:12px; margin-top:8px; line-height:1.45}
 
     .divider{
-      height:1px; background:rgba(255,255,255,.06); margin:14px 0;
+      height:1px;
+      background: rgba(255,255,255,.06);
+      margin:14px 0;
     }
 
-    /* --------- Sections (details) --------- */
-    details.section{
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:14px;
-      background:rgba(0,0,0,.12);
-      padding:10px 12px;
-      margin:12px 0;
-    }
-    details.section[open]{
-      border-color:rgba(255,215,0,.22);
-      box-shadow:0 0 0 3px rgba(255,215,0,.06), 0 0 18px rgba(255,215,0,.08);
-      background:rgba(0,0,0,.18);
-    }
-    summary.section-title{
-      list-style:none;
-      cursor:pointer;
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
-      padding:8px 6px;
+    /* Buttons */
+    button{
+      background: linear-gradient(90deg, var(--ui-acc2), var(--ui-acc));
+      color:#0b0b0d;
+      border:none;
+      border-radius: 14px;
       font-weight:900;
-      color:var(--ui-acc);
-      user-select:none;
-    }
-    summary.section-title::-webkit-details-marker{display:none}
-    .section-left{
-      display:flex; align-items:center; gap:10px;
-      font-size:16px;
-    }
-    .chev{
-      width:10px; height:10px; border-right:2px solid rgba(255,215,0,.8);
-      border-bottom:2px solid rgba(255,215,0,.8);
-      transform:rotate(45deg);
-      transition:transform .15s ease;
-      opacity:.9;
-      margin-left:4px;
-    }
-    details[open] .chev{ transform:rotate(225deg); }
-    .badge{
-      font-size:12px;
-      padding:4px 9px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      color:rgba(255,255,255,.86);
-      background:rgba(255,255,255,.04);
-      font-weight:800;
-    }
-    .badge.on{
-      border-color:rgba(255,215,0,.35);
-      color:#111;
-      background:linear-gradient(90deg,#ffbf00,#ffd700);
-    }
-    .section-body{ padding:6px 2px 2px; }
-
-    /* --------- Preview --------- */
-    .preview-grid{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:14px;
-    }
-    .hud{
-      display:flex; align-items:center; gap:12px;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(0,0,0,.18);
-    }
-    #iconPrev{
-      width:36px; height:36px;
-      background:#222; border-radius:10px;
-      background-size:contain; background-position:center; background-repeat:no-repeat;
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:0 0 18px rgba(255,215,0,.06);
-    }
-    #textPrev{font-weight:900; font-size:22px;}
-
-    .preview-panels{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-    }
-    @media (max-width: 1100px){
-      main{grid-template-columns:1fr}
-      .preview-panels{grid-template-columns:1fr}
-    }
-
-    .preview-card{
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(0,0,0,.18);
-      border-radius:14px;
-      padding:12px;
-      overflow:hidden;
-    }
-    .preview-card .cap{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .preview-card .cap b{
-      color:var(--ui-acc); font-weight:900; letter-spacing:.2px;
-    }
-
-    /* Simulated modal box */
-    #taskPreviewBox{
-      border-radius:18px;
-      padding:14px 14px 12px;
-      border:2px solid transparent;
-      color:#fff;
-      background:linear-gradient(135deg, #4facfe, #00f2fe);
-      box-shadow:0 10px 22px rgba(0,0,0,.35);
-      transform-origin:center;
-    }
-    #taskPreviewQuestion{
-      font-weight:900;
-      margin-bottom:10px;
-      line-height:1.25;
-    }
-    .mini-zone{
-      display:flex; align-items:center; justify-content:center;
-      gap:8px;
-      padding:10px;
-      border-radius:14px;
-      min-height:42px;
-      font-size:12px;
-      color:rgba(255,255,255,.85);
-      border:1px dashed rgba(255,255,255,.14);
-    }
-
-    #feedbackPreviewBox{
-      border-radius:16px;
       padding:12px 14px;
-      border:2px solid transparent;
+      cursor:pointer;
+      transition:transform .12s ease, box-shadow .15s ease, filter .15s ease;
+      font-size:14px;
+      box-shadow: 0 10px 30px rgba(255,215,0,.18);
+    }
+    button:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 14px 34px rgba(255,215,0,.22);
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.06);
       color:#fff;
-      background:#131316;
-      box-shadow:0 10px 22px rgba(0,0,0,.35);
-      transform-origin:center;
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:none;
     }
-    #feedbackPreviewText{
-      font-weight:900;
-      font-size:22px;
-      line-height:1.2;
-      text-align:center;
+    .btn-ghost:hover{
+      box-shadow: 0 12px 26px rgba(0,0,0,.25);
+      transform: translateY(-1px);
     }
-
-    .summary{
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(0,0,0,.18);
-      border-radius:14px;
-      padding:12px;
-      display:grid;
-      gap:6px;
-      color:rgba(255,255,255,.86);
+    .btn-mini{
+      padding:10px 12px;
+      border-radius:12px;
       font-size:13px;
-    }
-    .summary span{
-      color:rgba(255,255,255,.92);
-      font-weight:800;
+      font-weight:900;
     }
 
-    .pub-actions{
+    /* Publication layout */
+    .pub-wrap{
+      display:grid;
+      grid-template-columns: 1fr 220px;
+      gap:14px;
+      align-items:start;
+    }
+    .pub-left textarea{
+      height:150px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12.5px;
+    }
+    .pub-right{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:stretch;
+    }
+    .pub-bottom{
       display:flex;
       gap:10px;
-      flex-wrap:wrap;
       align-items:center;
-      justify-content:flex-end;
-      margin-top:10px;
+      margin-top:12px;
     }
+    .pub-bottom button{
+      width:100%;
+    }
+
+    /* Mode pills */
+    .mode-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:8px;
+    }
+    .mode{
+      display:flex; gap:10px;
+      align-items:flex-start;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      cursor:pointer;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+      user-select:none;
+    }
+    .mode:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      border-color: rgba(255,215,0,.25);
+    }
+    .mode strong{display:block; font-size:13px; font-weight:900}
+    .mode span{display:block; margin-top:2px; font-size:12px; color:var(--muted); line-height:1.25}
+
+    /* Preview column */
+    .preview-stack{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .preview-item{
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(0,0,0,.16);
+      border-radius: 14px;
+      padding:12px;
+      box-shadow: var(--shadow2);
+    }
+    .preview-item h3{
+      margin:0 0 10px;
+      font-size:13px;
+      font-weight:900;
+      color: rgba(255,255,255,.9);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .kbd{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.85);
+    }
+
+    /* Range */
+    .range-row{
+      display:grid;
+      grid-template-columns: 1fr 88px;
+      gap:10px;
+      align-items:center;
+    }
+    input[type="range"]{
+      width:100%;
+      accent-color: var(--ui-acc);
+    }
+
+    /* Hide helpers */
+    .hidden{display:none !important;}
+
   </style>
 
-  <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
+  <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap">
 </head>
 
 <body>
-  <header><h1>Редактор «Utki»</h1></header>
+  <header>
+    <h1>🦆 Редактор «Utki» <span class="pill">Neon UI</span></h1>
+    <span class="pill" id="statusPill">Готов</span>
+  </header>
 
   <main>
-    <!-- LEFT -->
+    <!-- LEFT: Controls -->
     <section class="card">
-      <h2>⚙️ Редактирование</h2>
 
-      <!-- Quick settings always visible -->
-      <div class="row">
-        <div>
-          <label>Язык</label>
-          <select id="language"></select>
+      <div class="section">
+        <h2>⚙️ Базовые настройки</h2>
+
+        <div class="row">
+          <div>
+            <label>Язык</label>
+            <select id="language"></select>
+          </div>
+
+          <div>
+            <label>Шрифт</label>
+            <select id="font"></select>
+            <div class="small-hint">Список шрифтов меняется в зависимости от языка (чтобы не было квадратиков).</div>
+          </div>
         </div>
-        <div>
-          <label>Шрифт</label>
-          <select id="font"></select>
+
+        <label>Картинка утёнка/пузырька (URL)</label>
+        <input type="url" id="bgImage" placeholder="https://.../duck.gif">
+
+        <label>Размер утят/пузырьков (px)</label>
+        <div class="range-row">
+          <input type="range" id="bubbleSizeRange" min="40" max="160" step="2" value="80">
+          <input type="number" id="bubbleSize" min="40" max="200" step="1" value="80">
+        </div>
+        <div class="small-hint">Это размер “лопаемых” картинок в игре.</div>
+
+        <div class="row" style="margin-top:10px">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="margin:0;">
+              <input type="checkbox" id="lockNext" checked>
+              Нельзя лопнуть следующий, пока не выполнено текущее задание
+            </label>
+            <div class="small-hint">Включено — игрок делает задания строго по одному (без спама кликов).</div>
+          </div>
+          <div></div>
         </div>
       </div>
 
-      <!-- CONTENT -->
-      <details class="section" open>
-        <summary class="section-title">
-          <div class="section-left">🧩 Контент <i class="chev"></i></div>
-          <div class="badge" id="badgeTasks">0 заданий</div>
-        </summary>
-        <div class="section-body">
+      <div class="section">
+        <h2>🔊 Звуки</h2>
 
-          <label>Вопросы (по одному на строке)</label>
-          <textarea id="questions" placeholder="Сколько будет 2+2?&#10;Найди значение x в уравнении ..."></textarea>
-          <div class="small-hint">1 строка = 1 задание. Можно вставлять формулы (MathJax) и ссылки на картинки.</div>
+        <div class="row">
+          <div>
+            <label>Звук лопания (URL)</label>
+            <input type="url" id="popSound" placeholder="https://.../pop.mp3">
+          </div>
+          <div>
+            <label>Звук фидбека (URL)</label>
+            <input type="url" id="openSound" placeholder="https://.../open.mp3">
+          </div>
+        </div>
 
+        <label>Звук ошибки (URL, опционально)</label>
+        <input type="url" id="wrongSound" placeholder="https://.../wrong.mp3">
+      </div>
+
+      <div class="section">
+        <h2>🎯 Задания</h2>
+
+        <label>Тип заданий (один режим на весь набор)</label>
+        <div class="mode-grid" id="modeGrid">
+          <label class="mode">
+            <input type="radio" name="mode" value="text" id="modeText" checked>
+            <div>
+              <strong>Текст</strong>
+              <span>Просто показать текст. Закрывается по клику.</span>
+            </div>
+          </label>
+          <label class="mode">
+            <input type="radio" name="mode" value="input" id="modeInput">
+            <div>
+              <strong>Вписать ответ</strong>
+              <span>Один правильный ответ на строку (или несколько через |).</span>
+            </div>
+          </label>
+          <label class="mode">
+            <input type="radio" name="mode" value="quiz" id="modeQuiz">
+            <div>
+              <strong>Квиз</strong>
+              <span>Правильные + неправильные варианты (варианты не мельче текста задания).</span>
+            </div>
+          </label>
+          <label class="mode">
+            <input type="radio" name="mode" value="order" id="modeOrder">
+            <div>
+              <strong>Порядок слов</strong>
+              <span>Напиши предложение целиком — игрок кликом собирает его.</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="hint" id="modeHint" style="margin-top:10px;"></div>
+
+        <div class="divider"></div>
+
+        <label>Вопросы / предложения (по одному на строке)</label>
+        <textarea id="questions" placeholder="Why do you like learning English?&#10;..."></textarea>
+
+        <div id="answersBlock">
           <label>Правильные ответы (по одному набору на строке)</label>
-          <textarea id="correctAnswers" placeholder="4|четыре&#10;x=3|3"></textarea>
-          <div class="small-hint">Варианты через <b>|</b>. Можно оставить пустым, если вопрос без ответа.</div>
+          <textarea id="correctAnswers" placeholder="because|I like it&#10;..."></textarea>
+          <div class="small-hint">
+            На каждой строке — ответы для соответствующего вопроса, варианты через |.
+          </div>
 
           <label>Неправильные ответы (по одному набору на строке)</label>
-          <textarea id="wrongAnswers" placeholder="3|5&#10;x=1|1"></textarea>
-          <div class="small-hint">Варианты через <b>|</b>. Можно оставить пустым.</div>
-
-          <div class="divider"></div>
+          <textarea id="wrongAnswers" placeholder="because I like|because learning&#10;..."></textarea>
+          <div class="small-hint">
+            На каждой строке — неправильные варианты для соответствующего вопроса, варианты через |.
+          </div>
 
           <label style="margin-top:10px;">
             <input type="checkbox" id="autoDistractors">
-            Брать неправильные ответы из других правильных
+            Брать неправильные ответы из других правильных (если пусто)
           </label>
           <div class="small-hint">
-            Если для задания не указаны wrong-варианты, плагин подмешает distractors из правильных ответов других задач.
+            Если wrong не заданы — подмешаем distractors из правильных ответов других задач.
           </div>
 
           <div class="row" style="margin-top:12px">
@@ -359,246 +420,177 @@
                 <option value="2">2</option>
                 <option value="3">3</option>
                 <option value="4" selected>4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
               </select>
-              <div class="small-hint">Рекомендую 4. Если вариантов не хватает — будет меньше.</div>
+              <div class="small-hint">Рекомендую 4.</div>
             </div>
           </div>
-
         </div>
-      </details>
+      </div>
 
-      <!-- MODES -->
-      <details class="section" open>
-        <summary class="section-title">
-          <div class="section-left">🧠 Режимы <i class="chev"></i></div>
-          <div class="badge" id="badgeModes">—</div>
-        </summary>
-        <div class="section-body">
+      <div class="section">
+        <h2>🎨 Оформление</h2>
 
-          <label style="margin:0;">
-            <input type="checkbox" id="orderMode">
-            Режим: собрать предложение из слов (для всех текстовых заданий без ответов)
+        <div class="row">
+          <div>
+            <label>Размер шрифта (задание + варианты + фидбек)</label>
+            <input type="number" id="baseFontSize" value="22" min="12" max="48">
+            <div class="small-hint">Один размер на всё, как ты просила.</div>
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <label style="margin:0;">
+              <input type="checkbox" id="taskNeon" checked>
+              Неоновая рамка задания
+            </label>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Фон задания</label>
+            <input type="color" id="taskBgColor" value="#4facfe">
+          </div>
+          <div>
+            <label>Рамка задания</label>
+            <input type="color" id="taskBorderColor" value="#00f2fe">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Цвет текста</label>
+            <input type="color" id="taskTextColor" value="#ffffff">
+          </div>
+          <div>
+            <label>Прозрачность фона (0–1)</label>
+            <input type="number" id="taskBgOpacity" value="1" step="0.05" min="0" max="1">
+            <div class="small-hint">Прозрачность действует только на фон, не на текст.</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>💫 Финальный фидбек</h2>
+
+        <div class="row">
+          <div>
+            <label>Финальный текст</label>
+            <input type="text" id="finalFeedback" placeholder="🎉 Well Done!" value="🎉 Well Done!">
+          </div>
+          <div>
+            <label>Картинка фидбека (URL)</label>
+            <input type="url" id="feedbackImage" placeholder="https://.../chest.png">
+          </div>
+        </div>
+
+        <label style="margin-top:10px;">
+          <input type="checkbox" id="feedbackEnabled" checked>
+          Показывать финальный фидбек
+        </label>
+
+        <label>Что показывать в фидбеке</label>
+        <div class="row">
+          <label style="display:flex; gap:10px; align-items:center; margin:0; padding:10px 12px; border:1px solid rgba(255,255,255,.10); border-radius:14px; background:rgba(255,255,255,.04);">
+            <input type="radio" name="fbMode" value="both" id="fbBoth" checked>
+            Картинка + текст (по умолчанию)
           </label>
-          <div class="small-hint" style="margin-top:6px;">
-            Если включено — любое задание без вариантов/ответа будет показано как «расставь слова по порядку».
-          </div>
-
-          <div class="divider"></div>
-
-          <label style="margin:0;">
-            <input type="checkbox" id="feedbackEnabled" checked>
-            Показывать финальный фидбек (сундук/картинка и текст)
+          <label style="display:flex; gap:10px; align-items:center; margin:0; padding:10px 12px; border:1px solid rgba(255,255,255,.10); border-radius:14px; background:rgba(255,255,255,.04);">
+            <input type="radio" name="fbMode" value="text" id="fbText">
+            Только текст
           </label>
         </div>
-      </details>
-
-      <!-- VISUAL -->
-      <details class="section" open>
-        <summary class="section-title">
-          <div class="section-left">🎨 Визуал <i class="chev"></i></div>
-          <div class="badge" id="badgeNeon">NEON</div>
-        </summary>
-        <div class="section-body">
-
-          <div class="row">
-            <div>
-              <label>Размер элементов</label>
-              <select id="uiScale">
-                <option value="0.85">S (компактно)</option>
-                <option value="1" selected>M (стандарт)</option>
-                <option value="1.15">L (крупно)</option>
-              </select>
-              <div class="small-hint">Влияет на визуальный масштаб превью и на сохранённый размер шрифта задания.</div>
-            </div>
-            <div>
-              <label>Финальный текст</label>
-              <input type="text" id="finalFeedback" placeholder="🎉 Well Done!">
-            </div>
+        <div class="row" style="margin-top:10px;">
+          <label style="display:flex; gap:10px; align-items:center; margin:0; padding:10px 12px; border:1px solid rgba(255,255,255,.10); border-radius:14px; background:rgba(255,255,255,.04);">
+            <input type="radio" name="fbMode" value="image" id="fbImage">
+            Только картинка
+          </label>
+          <div class="small-hint" style="margin:0; display:flex; align-items:center;">
+            Убрать и текст, и картинку нельзя.
           </div>
-
-          <label>Картинка летающего предмета (URL)</label>
-          <input type="url" id="bgImage" placeholder="https://.../duck.gif">
-
-          <label>Картинка фидбека (URL)</label>
-          <input type="url" id="feedbackImage" placeholder="https://.../chest.png">
-
-          <div class="divider"></div>
-
-          <h2 style="margin:0 0 12px; border:0; padding:0; font-size:16px;">🪟 Оформление задания</h2>
-
-          <div class="row">
-            <div>
-              <label>Цвет фона</label>
-              <input type="color" id="taskBgColor" value="#4facfe">
-            </div>
-            <div>
-              <label>Цвет рамки</label>
-              <input type="color" id="taskBorderColor" value="#00f2fe">
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label>Цвет текста</label>
-              <input type="color" id="taskTextColor" value="#ffffff">
-            </div>
-            <div>
-              <label>Прозрачность (0–1)</label>
-              <input type="number" id="taskBgOpacity" value="1" step="0.1" min="0" max="1">
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label>Размер шрифта</label>
-              <input type="number" id="taskFontSize" value="22" min="10" max="60">
-              <div class="small-hint">С учётом “Размер элементов” будет сохранено с множителем.</div>
-            </div>
-            <div style="display:flex; align-items:flex-end;">
-              <label style="margin:0;">
-                <input type="checkbox" id="taskNeon" checked> Неоновая рамка задания
-              </label>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <h2 style="margin:0 0 12px; border:0; padding:0; font-size:16px;">💫 Оформление фидбека</h2>
-
-          <div class="row">
-            <div>
-              <label>Цвет рамки</label>
-              <input type="color" id="feedbackBorderColor" value="#e67e22">
-            </div>
-            <div>
-              <label>Цвет текста</label>
-              <input type="color" id="feedbackTextColor" value="#ffffff">
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label>Фон текста фидбека</label>
-              <input type="color" id="feedbackBgColor" value="#131316">
-            </div>
-            <div style="display:flex; align-items:flex-end;">
-              <label style="margin:0;">
-                <input type="checkbox" id="feedbackNeon" checked> Неоновая рамка фидбека
-              </label>
-            </div>
-          </div>
-
         </div>
-      </details>
 
-      <!-- SOUNDS -->
-      <details class="section">
-        <summary class="section-title">
-          <div class="section-left">🔊 Звуки <i class="chev"></i></div>
-          <div class="badge" id="badgeSounds">—</div>
-        </summary>
-        <div class="section-body">
-          <label>Звук лопания (URL)</label>
-          <input type="url" id="popSound" placeholder="https://.../pop.mp3">
-
-          <label>Звук фидбека / сундука (URL)</label>
-          <input type="url" id="openSound" placeholder="https://.../open.mp3">
-
-          <label>Звук ошибки (URL, опционально)</label>
-          <input type="url" id="wrongSound" placeholder="https://.../wrong.mp3">
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Фон текста фидбека</label>
+            <input type="color" id="feedbackBgColor" value="#131316">
+          </div>
+          <div>
+            <label>Рамка фидбека</label>
+            <input type="color" id="feedbackBorderColor" value="#e67e22">
+          </div>
         </div>
-      </details>
 
-      <!-- PUBLISH (buttons MUST be here, near iframe) -->
-      <details class="section" open>
-        <summary class="section-title">
-          <div class="section-left">🚀 Публикация <i class="chev"></i></div>
-          <div class="badge" id="badgePublish">iframe</div>
-        </summary>
-        <div class="section-body">
+        <div class="row">
+          <div>
+            <label>Цвет текста фидбека</label>
+            <input type="color" id="feedbackTextColor" value="#ffffff">
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <label style="margin:0;">
+              <input type="checkbox" id="feedbackNeon" checked>
+              Неоновая рамка фидбека
+            </label>
+          </div>
+        </div>
 
-          <div class="result">
+      </div>
+
+      <div class="section" id="publishSection">
+        <h2>🚀 Публикация <span class="pill" style="margin-left:auto;">iframe</span></h2>
+
+        <div class="pub-wrap">
+          <div class="pub-left">
+            <label style="margin-top:0;">iframe для Genially</label>
             <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
-            <div style="display:flex; flex-direction:column; gap:10px; align-items:stretch;">
-              <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
-            </div>
           </div>
 
-          <div class="pub-actions">
-            <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
-            <button id="saveBtn">💾 Сохранить и получить iframe</button>
+          <div class="pub-right">
+            <button id="copyBtn" class="btn-ghost btn-mini">📋 Копировать</button>
+            <button id="testBtn" class="btn-ghost btn-mini">🔎 Валидация JSON</button>
           </div>
-
-          <div class="hint">После публикации подождите 30–60 секунд (кеш GitHub Pages).</div>
         </div>
-      </details>
+
+        <div class="pub-bottom">
+          <button id="saveBtn">💾 Сохранить и получить iframe</button>
+        </div>
+
+        <div class="hint">После публикации подождите 30–60 секунд, чтобы ссылка обновилась.</div>
+      </div>
 
     </section>
 
-    <!-- RIGHT -->
+    <!-- RIGHT: Preview -->
     <section class="card">
       <h2>🧪 Предпросмотр</h2>
 
-      <div class="preview-grid">
-        <!-- HUD -->
-        <div class="hud">
-          <div id="iconPrev"></div>
-          <div>
+      <div class="preview-stack">
+
+        <div class="preview-item">
+          <h3>HUD / счётчик <span class="kbd">0 / N</span></h3>
+          <div id="hudPrev" style="display:inline-flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,#f6f9fc,#dff9fb); color:#2d3436; font-weight:900;">
+            <div id="iconPrev" style="width:26px; height:26px; border-radius:8px; background:#222; background-size:contain; background-position:center; background-repeat:no-repeat;"></div>
             <div id="textPrev">0 / 0</div>
-            <div class="small-hint" style="margin-top:2px">
-              Иконка — из «Картинка летающего предмета». Кол-во заданий — по строкам «Вопросы».
-            </div>
+          </div>
+          <div class="hint">Иконка берётся из “Картинка утёнка/пузырька”.</div>
+        </div>
+
+        <div class="preview-item">
+          <h3>Пузырёк / утёнок <span class="kbd">size</span></h3>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <img id="bubblePrev" alt="bubble preview" style="width:80px; height:auto; object-fit:contain; filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));" />
+            <div class="hint" style="margin:0;">Размер берётся из “Размер утят/пузырьков”.</div>
           </div>
         </div>
 
-        <!-- Two preview panels -->
-        <div class="preview-panels">
-          <div class="preview-card">
-            <div class="cap">
-              <b>🎨 Окно задания</b>
-              <span class="badge" id="badgeTaskPreview">—</span>
-            </div>
-
-            <div id="taskPreviewBox">
-              <div id="taskPreviewQuestion">Why do you like learning English?</div>
-
-              <div class="mini-zone" style="background:rgba(0,0,0,0.18);">
-                поле ответа / сборка слов
-              </div>
-
-              <div class="mini-zone" style="margin-top:10px; background:rgba(255,255,255,0.12);">
-                банк слов / варианты
-              </div>
-            </div>
-
-            <div class="small-hint" style="margin-top:10px">
-              Это визуальная копия рамки/фона. Никакой логики — только стиль.
-            </div>
-          </div>
-
-          <div class="preview-card">
-            <div class="cap">
-              <b>💫 Фидбек (текст)</b>
-              <span class="badge" id="badgeFeedbackPreview">—</span>
-            </div>
-
-            <div id="feedbackPreviewBox">
-              <div id="feedbackPreviewText">🎉 Well done!</div>
-            </div>
-
-            <div class="small-hint" style="margin-top:10px">
-              Показана плашка текста (без сундука), чтобы оценить рамку/фон/цвета.
-            </div>
-          </div>
+        <div class="preview-item">
+          <h3>Окно задания <span class="kbd" id="modeBadge">mode</span></h3>
+          <div id="taskPrev" style="max-width:520px;"></div>
         </div>
 
-        <!-- Summary -->
-        <div class="summary" id="summaryBox">
-          <div>Заданий: <span id="sumTasks">0</span></div>
-          <div>Order mode: <span id="sumOrder">OFF</span></div>
-          <div>Feedback: <span id="sumFeedback">ON</span></div>
-          <div>Квиз: <span id="sumQuiz">4</span> вариантов, добор: <span id="sumQuizFill">OFF</span></div>
-          <div>Размер элементов: <span id="sumScale">M</span></div>
+        <div class="preview-item">
+          <h3>Финальный фидбек <span class="kbd" id="fbBadge">both</span></h3>
+          <div id="fbPrev" style="max-width:520px;"></div>
         </div>
 
       </div>
@@ -612,7 +604,7 @@
     const PUBLISH_KEY = "nika_read_pub_2025";
     const BASE_MAIN   = "https://nikashum93.github.io/utki/main.html";
 
-    // Языки и шрифты
+    // Languages
     const LANGUAGE_OPTIONS = [
       { value: "ru", label: "Русский" },
       { value: "en", label: "English" },
@@ -624,15 +616,56 @@
       { value: "ja", label: "日本語" }
     ];
 
-    const FONT_MAP = {
-      ru: ["Rubik","PT Sans","Montserrat","Noto Sans"],
-      en: ["Inter","Poppins","Roboto","Open Sans","Rubik"],
-      es: ["Poppins","Montserrat","Noto Sans","Open Sans"],
-      de: ["Fira Sans","Montserrat","Noto Sans","Open Sans"],
-      fr: ["Poppins","Montserrat","Noto Sans","Open Sans"],
-      it: ["Rubik","Inter","Noto Sans","Roboto","Arial"],
-      zh: ["Noto Sans SC","Noto Serif SC"],
-      ja: ["Noto Sans JP","Noto Serif JP"]
+    // Font sets (curated to avoid missing glyphs)
+    const FONT_SETS = {
+      ru: {
+        basic: ["Rubik","PT Sans","Montserrat","Noto Sans","Nunito","Comfortaa"],
+        cartoon: ["Baloo 2","Fredoka","M PLUS Rounded 1c"],
+        handwritten: ["Caveat","Neucha","Marck Script","Bad Script","Patrick Hand"],
+        seasonal: ["Mountains of Christmas"] // (есть кириллица не везде — fallback спасёт)
+      },
+      en: {
+        basic: ["Inter","Poppins","Roboto","Open Sans","Rubik","Nunito"],
+        cartoon: ["Baloo 2","Fredoka","Bangers"],
+        handwritten: ["Caveat","Patrick Hand","Indie Flower","Gloria Hallelujah"],
+        seasonal: ["Mountains of Christmas","Snowburst One","Creepster"]
+      },
+      es: {
+        basic: ["Poppins","Montserrat","Noto Sans","Open Sans","Nunito"],
+        cartoon: ["Baloo 2","Fredoka","Bangers"],
+        handwritten: ["Caveat","Patrick Hand","Indie Flower","Gloria Hallelujah"],
+        seasonal: ["Mountains of Christmas","Snowburst One","Creepster"]
+      },
+      de: {
+        basic: ["Fira Sans","Montserrat","Noto Sans","Open Sans","Nunito"],
+        cartoon: ["Baloo 2","Fredoka","Bangers"],
+        handwritten: ["Caveat","Patrick Hand","Indie Flower","Gloria Hallelujah"],
+        seasonal: ["Mountains of Christmas","Snowburst One","Creepster"]
+      },
+      fr: {
+        basic: ["Poppins","Montserrat","Noto Sans","Open Sans","Nunito"],
+        cartoon: ["Baloo 2","Fredoka","Bangers"],
+        handwritten: ["Caveat","Patrick Hand","Indie Flower","Gloria Hallelujah"],
+        seasonal: ["Mountains of Christmas","Snowburst One","Creepster"]
+      },
+      it: {
+        basic: ["Rubik","Inter","Noto Sans","Roboto","Nunito"],
+        cartoon: ["Baloo 2","Fredoka","Bangers"],
+        handwritten: ["Caveat","Patrick Hand","Indie Flower","Gloria Hallelujah"],
+        seasonal: ["Mountains of Christmas","Snowburst One","Creepster"]
+      },
+      zh: {
+        basic: ["Noto Sans SC","Noto Serif SC"],
+        cartoon: ["ZCOOL KuaiLe"],
+        handwritten: ["Long Cang"],
+        seasonal: ["Noto Sans SC"]
+      },
+      ja: {
+        basic: ["Noto Sans JP","Noto Serif JP"],
+        cartoon: ["M PLUS Rounded 1c"],
+        handwritten: ["Yomogi"],
+        seasonal: ["Noto Sans JP"]
+      }
     };
 
     function fillLanguageSelect(){
@@ -650,47 +683,140 @@
     function fillFontsForLanguage(lang){
       const sel = $('#font');
       sel.innerHTML = "";
-      const list = FONT_MAP[lang] || FONT_MAP.en;
-      list.forEach(f => {
-        const opt = document.createElement('option');
-        opt.textContent = f;
-        opt.value = f;
-        sel.appendChild(opt);
-      });
-      sel.value = list[0];
-      applyGoogleFont(sel.value);
+
+      const sets = FONT_SETS[lang] || FONT_SETS.en;
+
+      const addGroup = (label, arr) => {
+        if(!arr || !arr.length) return;
+        const og = document.createElement('optgroup');
+        og.label = label;
+        arr.forEach(f => {
+          const opt = document.createElement('option');
+          opt.textContent = f;
+          opt.value = f;
+          og.appendChild(opt);
+        });
+        sel.appendChild(og);
+      };
+
+      addGroup("— Basic —", sets.basic);
+      addGroup("— Cartoon —", sets.cartoon);
+      addGroup("— Handwritten —", sets.handwritten);
+      addGroup("— Seasonal —", sets.seasonal);
+
+      // default = first in basic
+      const first = (sets.basic && sets.basic[0]) ? sets.basic[0] : "Rubik";
+      sel.value = first;
+      applyGoogleFont(sel.value, lang);
     }
 
-    function applyGoogleFont(fontName){
+    function applyGoogleFont(fontName, lang){
       if(!fontName) return;
+
       const gf = document.getElementById('gf');
       const family = fontName.replace(/ /g, '+');
-      gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
-      document.body.style.fontFamily = fontName + ', system-ui, sans-serif';
+
+      // NOTE: Google Fonts API (simple). For CJK we keep 400/700.
+      gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700;900&display=swap`;
+
+      // Robust fallbacks by lang
+      const fallbackByLang = {
+        ru: `, "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        en: `, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        es: `, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        de: `, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        fr: `, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        it: `, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        zh: `, "Noto Sans SC", "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+        ja: `, "Noto Sans JP", "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`,
+      };
+
+      document.body.style.fontFamily = `"${fontName}"${fallbackByLang[lang] || fallbackByLang.en}`;
     }
 
-    function getUiScale(){
-      const v = parseFloat($('#uiScale')?.value || '1');
-      return (isFinite(v) && v>0) ? v : 1;
+    // Mode helpers
+    function getMode(){
+      const v = document.querySelector('input[name="mode"]:checked')?.value || 'text';
+      return v;
     }
-    function scaleLabel(v){
-      if (v <= 0.90) return 'S';
-      if (v >= 1.10) return 'L';
-      return 'M';
+    function setModeHint(){
+      const mode = getMode();
+      const hint = $('#modeHint');
+
+      const map = {
+        text:  "Текст: просто показываем текст. Поля ответов не нужны.",
+        input: "Вписать ответ: заполни «Правильные ответы». Wrong не обязателен.",
+        quiz:  "Квиз: заполни «Правильные» и «Неправильные». Варианты будут тем же размером, что и текст.",
+        order: "Порядок слов: в «Вопросы» впиши предложения целиком. Поля ответов не нужны."
+      };
+      hint.textContent = map[mode] || "";
+
+      // show/hide answers block
+      const answers = $('#answersBlock');
+      if (mode === 'quiz' || mode === 'input') {
+        answers.classList.remove('hidden');
+      } else {
+        answers.classList.add('hidden');
+      }
+
+      // in input mode hide wrong + quiz settings visually (but keep in DOM)
+      const wrongLabel = document.querySelector('label[for="wrongAnswers"]');
+      // We'll just hide wrong textarea and quiz settings by ids
+      const wrongTA = $('#wrongAnswers');
+      const autoD = $('#autoDistractors');
+      const quizUse = $('#quizUseOtherCorrect').closest('.row');
+      const autoBlock = $('#autoDistractors').closest('label').nextElementSibling;
+
+      if (mode === 'input'){
+        $('#wrongAnswers').classList.add('hidden');
+        // hide wrong hint blocks (next sibling small-hint)
+        $('#wrongAnswers').nextElementSibling?.classList?.add('hidden');
+        // hide auto + quiz settings (quiz not needed)
+        $('#autoDistractors').closest('label').classList.add('hidden');
+        autoBlock?.classList?.add('hidden');
+        quizUse.classList.add('hidden');
+      } else if (mode === 'quiz'){
+        $('#wrongAnswers').classList.remove('hidden');
+        $('#wrongAnswers').nextElementSibling?.classList?.remove('hidden');
+        $('#autoDistractors').closest('label').classList.remove('hidden');
+        autoBlock?.classList?.remove('hidden');
+        quizUse.classList.remove('hidden');
+      }
+
+      // badge
+      $('#modeBadge').textContent = mode;
+      refreshPreview();
+    }
+
+    function hexToRgba(hex, a){
+      try{
+        const h = hex.replace('#','');
+        const r = parseInt(h.substring(0,2),16);
+        const g = parseInt(h.substring(2,4),16);
+        const b = parseInt(h.substring(4,6),16);
+        return `rgba(${r},${g},${b},${a})`;
+      }catch(_){
+        return hex;
+      }
     }
 
     function collectConfig(){
       const lang = $('#language').value;
       const font = $('#font').value;
+
       const bgImage = $('#bgImage').value.trim();
+      const bubbleSize = parseInt($('#bubbleSize').value || '80', 10);
+
       const finalFeedback = $('#finalFeedback').value.trim();
       const feedbackImage = $('#feedbackImage').value.trim();
 
       const popSoundUrl   = $('#popSound').value.trim()   || 'https://nikashum93.github.io/utki/pop.mp3';
       const openSoundUrl  = $('#openSound').value.trim()  || 'https://nikashum93.github.io/utki/open.mp3';
-      const wrongSoundUrl = $('#wrongSound').value.trim(); // может быть пустым
+      const wrongSoundUrl = $('#wrongSound').value.trim(); // optional
 
-      // Вопросы / ответы
+      const mode = getMode();
+
+      // Questions / answers
       const qLines  = $('#questions').value.split('\n');
       const cLines  = $('#correctAnswers').value.split('\n');
       const wLines  = $('#wrongAnswers').value.split('\n');
@@ -707,53 +833,55 @@
 
         if (!q && !cRaw && !wRaw) continue;
 
-        // Если в вопросе просто ссылка на PNG/GIF/JPG/WEBP — считаем это заданием-картинкой
+        // Image task (only if mode isn't order/input/quiz specifics — still ok)
         if (q && !cRaw && !wRaw && isImageUrl(q)) {
           tasks.push({ type:'image', image:q });
           continue;
         }
 
-        const correct = cRaw
-          ? cRaw.split('|').map(s=>s.trim()).filter(Boolean)
+        const correct = (mode === 'input' || mode === 'quiz')
+          ? (cRaw ? cRaw.split('|').map(s=>s.trim()).filter(Boolean) : [])
           : [];
-        const wrong = wRaw
-          ? wRaw.split('|').map(s=>s.trim()).filter(Boolean)
+
+        const wrong = (mode === 'quiz')
+          ? (wRaw ? wRaw.split('|').map(s=>s.trim()).filter(Boolean) : [])
           : [];
 
         tasks.push({ question: q, correct, wrong });
       }
 
+      // Styles
+      const baseFontSize = parseInt($('#baseFontSize').value || '22', 10);
+
       const taskBgColor     = $('#taskBgColor').value;
       const taskBorderColor = $('#taskBorderColor').value;
       const taskTextColor   = $('#taskTextColor').value;
-      const taskBgOpacity   = parseFloat($('#taskBgOpacity').value) || 1;
-      const baseTaskFontSize = parseInt($('#taskFontSize').value) || 22;
+      const taskBgOpacity   = parseFloat($('#taskBgOpacity').value);
       const taskNeon        = $('#taskNeon').checked;
 
       const feedbackBorderColor = $('#feedbackBorderColor').value;
       const feedbackTextColor   = $('#feedbackTextColor').value;
       const feedbackNeon        = $('#feedbackNeon').checked;
       const feedbackBgColor     = $('#feedbackBgColor').value;
+
       const feedbackEnabled     = $('#feedbackEnabled').checked;
-      const orderMode           = $('#orderMode').checked;
+      const fbMode = document.querySelector('input[name="fbMode"]:checked')?.value || 'both';
 
       const autoDistractors     = $('#autoDistractors').checked;
-
-      // NEW:
       const quizUseOtherCorrect = $('#quizUseOtherCorrect')?.checked || false;
       const quizMaxOptions      = parseInt($('#quizMaxOptions')?.value || '4', 10);
 
-      // NEW: размер элементов
-      const uiScale = getUiScale();
-      const scaledTaskFontSize = Math.round(baseTaskFontSize * uiScale);
+      // lock next
+      const lockNext = $('#lockNext').checked;
 
       return {
         language: lang,
-        lang, // alias для main.html (обратная совместимость)
+        lang,
         font,
-
-        uiScale, // new (main может игнорировать — не ломает)
-
+        mode,               // 'text' | 'input' | 'quiz' | 'order'
+        orderMode: (mode === 'order'),
+        lockNext: !!lockNext,
+        bubbleSize,         // NEW for main
         sounds: {
           pop:  popSoundUrl,
           open: openSoundUrl,
@@ -761,44 +889,48 @@
         },
         style: {
           bgImage,
+          bubbleSize, // duplicate for convenience
           task: {
-            bgColor:    taskBgColor,
+            bgColor:    hexToRgba(taskBgColor, isFinite(taskBgOpacity) ? taskBgOpacity : 1), // opacity only on bg
             borderColor:taskBorderColor,
             textColor:  taskTextColor,
-            opacity:    taskBgOpacity,
-            fontSize:   scaledTaskFontSize, // сохраняем уже с множителем
+            opacity:    1,                // keep legacy, but do not use in main
+            fontSize:   baseFontSize,
             neon:       taskNeon
           },
           feedback: {
             bgColor:     feedbackBgColor,
             borderColor: feedbackBorderColor,
             textColor:   feedbackTextColor,
+            fontSize:    baseFontSize,    // keep same
             neon:        feedbackNeon
           }
         },
         finalFeedback,
         feedbackImage,
+        feedbackEnabled,
+        feedbackMode: fbMode, // NEW: 'both'|'text'|'image'
         autoDistractors,
-
-        // NEW: квиз-лимиты
         quizUseOtherCorrect,
         quizMaxOptions,
-
-        feedbackEnabled,
-        orderMode,
         tasks
       };
     }
 
     function validate(cfg){
       if(!cfg.tasks || !cfg.tasks.length) return 'Добавьте хотя бы один вопрос.';
+      // feedback mode must not be none
+      if(cfg.feedbackEnabled){
+        if(!['both','text','image'].includes(cfg.feedbackMode)) return 'Выберите режим фидбека.';
+      }
       return null;
     }
 
     async function publish(){
+      $('#statusPill').textContent = 'Публикую…';
       const cfg = collectConfig();
       const err = validate(cfg);
-      if(err){ alert(err); return; }
+      if(err){ alert(err); $('#statusPill').textContent = 'Ошибка'; return; }
 
       const id = makeIdFromFirstTask(cfg);
       const payload = {
@@ -807,6 +939,7 @@
         folder: "data",
         content: JSON.stringify(cfg, null, 2)
       };
+
       try{
         const res = await fetch(ENDPOINT, {
           method: "POST",
@@ -822,8 +955,11 @@
         }
         const iframe = `<iframe src="${BASE_MAIN}?id=${encodeURIComponent(id)}" width="900" height="640" style="border:0;" allow="autoplay" allowfullscreen></iframe>`;
         $('#iframeOut').value = iframe;
-        alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
+
+        $('#statusPill').textContent = 'Готово ✅';
+        alert('Опубликовано! Подождите 30–60 секунд, чтобы ссылка обновилась.');
       }catch(e){
+        $('#statusPill').textContent = 'Сеть/ошибка';
         alert("Сеть/сервер: " + e.message);
       }
     }
@@ -853,105 +989,182 @@
       navigator.clipboard.writeText(v).then(()=>{}).catch(()=>{});
     }
 
-    // Preview helpers
-    function countTasksFromQuestions(){
-      return $('#questions').value
-        .split('\n')
-        .map(s=>s.trim())
-        .filter(Boolean)
-        .length;
-    }
-
-    function mix(a,b){ // quick gradient
-      return `linear-gradient(135deg, ${a}, ${b})`;
-    }
-
+    // Preview
     function refreshPreview(){
-      const url = $('#bgImage').value.trim();
-      $('#iconPrev').style.backgroundImage = url ? `url(${url})` : 'none';
-
-      const lines = countTasksFromQuestions();
-      $('#textPrev').textContent = '0 / ' + (lines || 0);
-
-      // badges
-      $('#badgeTasks').textContent = (lines||0) + ' заданий';
-
       const cfg = collectConfig();
 
-      // Modes badge
-      const modesOn = [];
-      if (cfg.orderMode) modesOn.push('ORDER');
-      if (cfg.feedbackEnabled) modesOn.push('FEEDBACK');
-      $('#badgeModes').textContent = modesOn.length ? modesOn.join(' + ') : 'OFF';
-      $('#badgeModes').className = 'badge' + (modesOn.length ? ' on' : '');
+      // HUD icon + count
+      const url = cfg.style.bgImage;
+      $('#iconPrev').style.backgroundImage = url ? `url(${url})` : 'none';
 
-      // Neon badge
-      const neonOn = [];
-      if (cfg.style?.task?.neon) neonOn.push('TASK');
-      if (cfg.style?.feedback?.neon) neonOn.push('FB');
-      $('#badgeNeon').textContent = neonOn.length ? ('NEON: ' + neonOn.join('+')) : 'NEON: OFF';
-      $('#badgeNeon').className = 'badge' + (neonOn.length ? ' on' : '');
+      const lines = $('#questions').value.split('\n').map(s=>s.trim()).filter(Boolean).length;
+      $('#textPrev').textContent = '0 / ' + (lines || 0);
 
-      // Summary
-      $('#sumTasks').textContent = cfg.tasks?.length || 0;
-      $('#sumOrder').textContent = cfg.orderMode ? 'ON' : 'OFF';
-      $('#sumFeedback').textContent = cfg.feedbackEnabled ? 'ON' : 'OFF';
-      $('#sumQuiz').textContent = cfg.quizMaxOptions || 4;
-      $('#sumQuizFill').textContent = cfg.quizUseOtherCorrect ? 'ON' : 'OFF';
-      $('#sumScale').textContent = scaleLabel(cfg.uiScale);
+      // Bubble preview
+      const bubbleEl = $('#bubblePrev');
+      bubbleEl.src = url || '';
+      bubbleEl.style.width = (cfg.bubbleSize || 80) + 'px';
+      bubbleEl.style.display = url ? 'block' : 'none';
 
-      // Task preview box styling
-      const tp = $('#taskPreviewBox');
-      tp.style.background = cfg.style.task.bgColor || '#4facfe';
-      // If bgColor is a solid color, give a tiny “depth” gradient
-      if ((cfg.style.task.bgColor||'').startsWith('#')) {
-        tp.style.background = mix(cfg.style.task.bgColor, '#0b0b0b');
+      // Mode badge
+      $('#modeBadge').textContent = cfg.mode || 'text';
+
+      // Task preview (mock modal)
+      const taskPrev = $('#taskPrev');
+      taskPrev.innerHTML = '';
+      const modal = document.createElement('div');
+      const bg = cfg.style.task.bgColor || '#4facfe';
+      const border = cfg.style.task.borderColor || '#00f2fe';
+      const color = cfg.style.task.textColor || '#fff';
+      const fs = (cfg.style.task.fontSize || 22);
+
+      modal.style.borderRadius = '18px';
+      modal.style.padding = '16px 16px';
+      modal.style.background = bg;
+      modal.style.border = `2px solid ${border}`;
+      modal.style.color = color;
+      modal.style.fontSize = fs + 'px';
+      modal.style.fontWeight = '800';
+      modal.style.boxShadow = cfg.style.task.neon ? `0 0 18px ${border}` : '0 10px 26px rgba(0,0,0,.25)';
+
+      const q = document.createElement('div');
+      q.textContent = 'Why do you like learning English?';
+      q.style.marginBottom = '10px';
+      modal.appendChild(q);
+
+      const mode = cfg.mode;
+
+      if (mode === 'quiz'){
+        const list = document.createElement('div');
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '8px';
+
+        ['Because I love it','Because it is easy','Because I can travel','Because I must'].forEach(t=>{
+          const b = document.createElement('div');
+          b.textContent = t;
+          b.style.background = 'rgba(255,255,255,.88)';
+          b.style.color = '#111';
+          b.style.borderRadius = '999px';
+          b.style.padding = '10px 12px';
+          b.style.fontSize = fs + 'px';   // IMPORTANT: not smaller
+          b.style.fontWeight = '800';
+          list.appendChild(b);
+        });
+        modal.appendChild(list);
+      } else if (mode === 'input'){
+        const inp = document.createElement('div');
+        inp.textContent = 'Type the answer…';
+        inp.style.background = 'rgba(255,255,255,.88)';
+        inp.style.color = '#111';
+        inp.style.borderRadius = '12px';
+        inp.style.padding = '10px 12px';
+        inp.style.fontSize = fs + 'px';
+        inp.style.fontWeight = '800';
+        modal.appendChild(inp);
+      } else if (mode === 'order'){
+        const box1 = document.createElement('div');
+        box1.textContent = 'Answer area (chips go here)';
+        box1.style.marginTop = '8px';
+        box1.style.padding = '10px';
+        box1.style.borderRadius = '14px';
+        box1.style.background = 'rgba(0,0,0,.18)';
+        box1.style.fontSize = (fs-2) + 'px';
+        modal.appendChild(box1);
+
+        const chips = document.createElement('div');
+        chips.style.display = 'flex';
+        chips.style.flexWrap = 'wrap';
+        chips.style.gap = '8px';
+        chips.style.marginTop = '8px';
+
+        ['Why','do','you','like','learning','English','?'].forEach(w=>{
+          const c = document.createElement('div');
+          c.textContent = w;
+          c.style.background = 'rgba(255,255,255,.90)';
+          c.style.color = '#111';
+          c.style.borderRadius = '999px';
+          c.style.padding = '8px 12px';
+          c.style.fontSize = fs + 'px';
+          c.style.fontWeight = '800';
+          chips.appendChild(c);
+        });
+        modal.appendChild(chips);
+      } else {
+        const txt = document.createElement('div');
+        txt.textContent = 'Click to close…';
+        txt.style.opacity = '.9';
+        modal.appendChild(txt);
       }
-      tp.style.opacity = (typeof cfg.style.task.opacity === 'number') ? String(cfg.style.task.opacity) : '1';
-      tp.style.border = cfg.style.task.borderColor ? ('2px solid ' + cfg.style.task.borderColor) : '2px solid transparent';
-      tp.style.color = cfg.style.task.textColor || '#fff';
-      tp.style.boxShadow = cfg.style.task.neon
-        ? `0 0 18px ${cfg.style.task.borderColor || '#ffffff'}, 0 10px 22px rgba(0,0,0,.35)`
-        : `0 10px 22px rgba(0,0,0,.35)`;
 
-      // apply scale to preview modal
-      const s = cfg.uiScale || 1;
-      tp.style.transform = `scale(${s})`;
+      taskPrev.appendChild(modal);
 
-      // font size preview (already scaled in cfg.style.task.fontSize)
-      $('#taskPreviewQuestion').style.fontSize = (cfg.style.task.fontSize || 22) + 'px';
+      // Feedback preview
+      const fbPrev = $('#fbPrev');
+      fbPrev.innerHTML = '';
+      const fbMode = cfg.feedbackMode || 'both';
+      $('#fbBadge').textContent = fbMode;
 
-      // feedback preview styling
-      const fp = $('#feedbackPreviewBox');
-      fp.style.background = cfg.style.feedback.bgColor || '#131316';
-      fp.style.border = cfg.style.feedback.borderColor ? ('2px solid ' + cfg.style.feedback.borderColor) : '2px solid transparent';
-      fp.style.color = cfg.style.feedback.textColor || '#fff';
-      fp.style.boxShadow = cfg.style.feedback.neon
-        ? `0 0 20px ${cfg.style.feedback.borderColor || '#ffffff'}, 0 10px 22px rgba(0,0,0,.35)`
-        : `0 10px 22px rgba(0,0,0,.35)`;
-      fp.style.transform = `scale(${s})`;
+      const fbWrap = document.createElement('div');
+      fbWrap.style.display = 'grid';
+      fbWrap.style.gridTemplateColumns = '1fr';
+      fbWrap.style.gap = '10px';
 
-      // feedback sample text
-      const ft = ($('#finalFeedback').value.trim() || '🎉 Well done!');
-      $('#feedbackPreviewText').textContent = ft;
+      // image
+      if (cfg.feedbackEnabled && (fbMode === 'both' || fbMode === 'image')) {
+        const img = document.createElement('div');
+        img.style.height = '96px';
+        img.style.borderRadius = '14px';
+        img.style.border = '1px solid rgba(255,255,255,.14)';
+        img.style.background = cfg.feedbackImage
+          ? `url(${cfg.feedbackImage}) center/contain no-repeat rgba(255,255,255,.05)`
+          : `linear-gradient(135deg, rgba(255,215,0,.18), rgba(0,240,255,.08))`;
+        img.style.boxShadow = '0 10px 24px rgba(0,0,0,.25)';
+        fbWrap.appendChild(img);
+      }
 
-      // preview badges
-      $('#badgeTaskPreview').textContent = `${cfg.style.task.fontSize || 22}px · ${scaleLabel(cfg.uiScale)}`;
-      $('#badgeFeedbackPreview').textContent = cfg.feedbackEnabled ? 'ON' : 'OFF';
-      $('#badgeFeedbackPreview').className = 'badge' + (cfg.feedbackEnabled ? ' on' : '');
+      // text label
+      if (cfg.feedbackEnabled && (fbMode === 'both' || fbMode === 'text')) {
+        const label = document.createElement('div');
+        const border2 = cfg.style.feedback.borderColor || '#e67e22';
+        const bg2 = cfg.style.feedback.bgColor || '#131316';
+        const col2 = cfg.style.feedback.textColor || '#fff';
+        const fs2 = cfg.style.task.fontSize || 22; // same as task
 
-      // sounds badge
-      const soundOn = [];
-      if ($('#popSound').value.trim()) soundOn.push('POP');
-      if ($('#openSound').value.trim()) soundOn.push('OPEN');
-      if ($('#wrongSound').value.trim()) soundOn.push('WRONG');
-      $('#badgeSounds').textContent = soundOn.length ? soundOn.join('+') : 'DEFAULT';
-      $('#badgeSounds').className = 'badge' + (soundOn.length ? ' on' : '');
+        label.textContent = cfg.finalFeedback || '🎉 Well Done!';
+        label.style.padding = '12px 14px';
+        label.style.borderRadius = '14px';
+        label.style.border = `2px solid ${border2}`;
+        label.style.background = bg2;
+        label.style.color = col2;
+        label.style.fontSize = (fs2 + 2) + 'px'; // small accent
+        label.style.fontWeight = '900';
+        label.style.textAlign = 'center';
+        label.style.boxShadow = cfg.style.feedback.neon ? `0 0 20px ${border2}` : '0 10px 24px rgba(0,0,0,.25)';
+        fbWrap.appendChild(label);
+      }
 
-      // publish badge
-      const iframeVal = $('#iframeOut').value.trim();
-      $('#badgePublish').textContent = iframeVal ? 'готово' : 'iframe';
-      $('#badgePublish').className = 'badge' + (iframeVal ? ' on' : '');
+      // if disabled
+      if (!cfg.feedbackEnabled){
+        const off = document.createElement('div');
+        off.textContent = 'Фидбек выключен';
+        off.style.opacity = '.75';
+        off.style.fontSize = '13px';
+        fbWrap.appendChild(off);
+      }
+
+      fbPrev.appendChild(fbWrap);
+    }
+
+    function syncBubbleSize(from){
+      const r = $('#bubbleSizeRange');
+      const n = $('#bubbleSize');
+      if (from === 'range'){
+        n.value = r.value;
+      } else {
+        r.value = n.value;
+      }
+      refreshPreview();
     }
 
     // Init
@@ -962,33 +1175,47 @@
       fillFontsForLanguage(e.target.value);
       refreshPreview();
     });
+
     $('#font').addEventListener('change', e => {
-      applyGoogleFont(e.target.value);
+      applyGoogleFont(e.target.value, $('#language').value);
       refreshPreview();
     });
 
-    // Inputs to watch
-    const watch = [
-      'bgImage','questions','correctAnswers','wrongAnswers',
-      'finalFeedback','feedbackImage',
-      'taskBgColor','taskBorderColor','taskTextColor','taskBgOpacity','taskFontSize','taskNeon',
-      'feedbackBorderColor','feedbackTextColor','feedbackBgColor','feedbackNeon',
-      'feedbackEnabled','orderMode','autoDistractors',
-      'quizUseOtherCorrect','quizMaxOptions',
-      'popSound','openSound','wrongSound',
-      'uiScale'
-    ];
-    watch.forEach(id => {
+    // mode change
+    document.querySelectorAll('input[name="mode"]').forEach(r=>{
+      r.addEventListener('change', setModeHint);
+    });
+
+    // bubble size sync
+    $('#bubbleSizeRange').addEventListener('input', ()=>syncBubbleSize('range'));
+    $('#bubbleSize').addEventListener('input', ()=>syncBubbleSize('number'));
+
+    // live preview inputs
+    [
+      'bgImage','questions','finalFeedback','feedbackImage',
+      'taskBgColor','taskBorderColor','taskTextColor','taskBgOpacity','taskNeon',
+      'feedbackBgColor','feedbackBorderColor','feedbackTextColor','feedbackNeon',
+      'baseFontSize','feedbackEnabled','quizMaxOptions','quizUseOtherCorrect','autoDistractors',
+      'lockNext','popSound','openSound','wrongSound'
+    ].forEach(id => {
       const el = $('#'+id);
-      if (!el) return;
+      if(!el) return;
       el.addEventListener('input', refreshPreview);
       el.addEventListener('change', refreshPreview);
     });
 
+    // feedback mode
+    document.querySelectorAll('input[name="fbMode"]').forEach(r=>{
+      r.addEventListener('change', refreshPreview);
+    });
+
+    // Buttons
     $('#saveBtn').addEventListener('click', publish);
     $('#testBtn').addEventListener('click', quickTest);
     $('#copyBtn').addEventListener('click', copyIframe);
 
+    // Start
+    setModeHint();
     refreshPreview();
   </script>
 </body>
