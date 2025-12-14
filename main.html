@@ -542,129 +542,223 @@
     return msg;
   }
 
-  // ORDER MODE — без исходного предложения, с кнопкой «Готово»
-  function showOrderSentence(sentence, onDone){
-    const originalTokens = tokenizeSentence(sentence);
-    const target = joinTokens(originalTokens);
+// ----------------------
+// ORDER MODE — Wordwall-style: одна строка слов, перетаскивание МЕЖДУ СОБОЙ
+// ----------------------
+function showOrderSentence(sentence, onDone){
+  const originalTokens = tokenizeSentence(sentence);
+  const target = joinTokens(originalTokens);
 
-    const msg = makeTaskCardBase();
-    msg.style.textAlign = 'center';
-    msg.style.maxWidth = '80vw';
+  const msg = makeTaskCardBase();
+  msg.style.textAlign = 'center';
+  msg.style.maxWidth = '86vw';
 
-    const answer = document.createElement('div');
-    Object.assign(answer.style, {
-      display:'flex', flexWrap:'wrap', gap:'10px', justifyContent:'center',
-      padding:'12px', borderRadius:'14px', background:'rgba(0,0,0,0.18)',
-      marginBottom:'12px', minHeight:'54px'
+  // Контейнер с “словами” — ОДНА горизонтальная дорожка
+  const rail = document.createElement('div');
+  Object.assign(rail.style, {
+    display: 'flex',
+    flexWrap: 'nowrap',            // важно: горизонтально
+    gap: '10px',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    padding: '12px 12px',
+    borderRadius: '16px',
+    background: 'rgba(0,0,0,0.18)',
+    overflowX: 'auto',             // если не влезает — скролл по X
+    overflowY: 'hidden',
+    whiteSpace: 'nowrap',
+    WebkitOverflowScrolling: 'touch',
+    scrollBehavior: 'smooth',
+    userSelect: 'none'
+  });
+
+  // подсказка (минимальная)
+  const hint = document.createElement('div');
+  hint.textContent = 'Drag words to reorder, then press Done';
+  Object.assign(hint.style, {
+    margin: '6px 0 12px',
+    opacity: '.85',
+    fontWeight: '800',
+    fontSize: '0.9em'
+  });
+
+  // фидбек под дорожкой
+  const fb = document.createElement('div');
+  fb.style.marginTop = '10px';
+  fb.style.minHeight = '28px';
+  fb.style.fontWeight = '900';
+
+  // кнопки
+  const controls = document.createElement('div');
+  Object.assign(controls.style, {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center',
+    marginTop: '12px',
+    flexWrap: 'wrap'
+  });
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.textContent = t('reset');
+  Object.assign(resetBtn.style, {
+    padding:'10px 16px',
+    borderRadius:'999px',
+    border:'none',
+    cursor:'pointer',
+    background:'rgba(0,0,0,0.25)',
+    color:'inherit',
+    fontWeight:'900',
+    fontSize:'inherit'
+  });
+
+  const doneBtn = document.createElement('button');
+  doneBtn.type = 'button';
+  doneBtn.textContent = t('done');
+  Object.assign(doneBtn.style, {
+    padding:'10px 18px',
+    borderRadius:'999px',
+    border:'none',
+    cursor:'pointer',
+    background:'rgba(255,255,255,0.92)',
+    color:'#2d3436',
+    fontWeight:'900',
+    fontSize:'inherit'
+  });
+
+  // --- оформление “чипов” в цвет рамки задания ---
+  const accent = (styleTask?.borderColor || '#00f2fe');
+  const chipBg = 'rgba(255,255,255,0.92)';
+
+  function makeChip(text){
+    const chip = document.createElement('div');
+    chip.className = 'kgb-chip';
+    chip.textContent = text;
+    chip.setAttribute('draggable', 'true');
+
+    Object.assign(chip.style, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '10px 14px',
+      borderRadius: '12px',
+      background: chipBg,
+      color: '#111',
+      fontWeight: '900',
+      fontSize: 'inherit',
+      border: `2px solid ${accent}`,
+      boxShadow: `0 10px 18px rgba(0,0,0,.25), 0 0 12px ${accent}33`, // объем + легкое свечение
+      transform: 'translateZ(0)',
+      transition: 'transform .14s ease, box-shadow .14s ease',
+      cursor: 'grab'
     });
 
-    const bank = document.createElement('div');
-    Object.assign(bank.style, {
-      display:'flex', flexWrap:'wrap', gap:'10px', justifyContent:'center',
-      padding:'12px', borderRadius:'14px', background:'rgba(255,255,255,0.16)'
+    chip.addEventListener('mouseenter', () => {
+      chip.style.transform = 'translateY(-1px)';
+      chip.style.boxShadow = `0 14px 22px rgba(0,0,0,.28), 0 0 16px ${accent}55`;
+    });
+    chip.addEventListener('mouseleave', () => {
+      chip.style.transform = 'translateY(0)';
+      chip.style.boxShadow = `0 10px 18px rgba(0,0,0,.25), 0 0 12px ${accent}33`;
     });
 
-    const makeChip = (text) => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.textContent = text;
-      Object.assign(chip.style, {
-        border:'none', borderRadius:'999px',
-        padding:'10px 14px',
-        fontSize:'inherit',
-        cursor:'pointer',
-        background:'rgba(255,255,255,0.92)',
-        color:'#2d3436',
-        fontWeight:'700'
-      });
-      return chip;
-    };
-
-    const fb = document.createElement('div');
-    fb.style.marginTop = '10px';
-    fb.style.minHeight = '28px';
-    fb.style.fontWeight = '800';
-    fb.style.textAlign = 'center';
-
-    const controls = document.createElement('div');
-    Object.assign(controls.style, { display:'flex', gap:'10px', justifyContent:'center', marginTop:'12px', flexWrap:'wrap' });
-
-    const resetBtn = document.createElement('button');
-    resetBtn.textContent = t('reset');
-    Object.assign(resetBtn.style, {
-      padding:'10px 16px',
-      borderRadius:'999px',
-      border:'none',
-      cursor:'pointer',
-      background:'rgba(0,0,0,0.25)',
-      color:'inherit',
-      fontWeight:'800',
-      fontSize:'inherit'
-    });
-
-    const doneBtn = document.createElement('button');
-    doneBtn.textContent = t('done');
-    Object.assign(doneBtn.style, {
-      padding:'10px 18px',
-      borderRadius:'999px',
-      border:'none',
-      cursor:'pointer',
-      background:'rgba(255,255,255,0.92)',
-      color:'#2d3436',
-      fontWeight:'900',
-      fontSize:'inherit'
-    });
-
-    resetBtn.addEventListener('click', () => {
-      const chips = Array.from(answer.querySelectorAll('button'));
-      chips.forEach(ch => bank.appendChild(ch));
+    // drag state
+    chip.addEventListener('dragstart', (e) => {
+      chip.classList.add('dragging');
+      chip.style.opacity = '0.55';
+      chip.style.cursor = 'grabbing';
+      try{
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'chip'); // просто чтобы не ругалось
+      }catch(_){}
       fb.textContent = '';
     });
 
-    const onChipClick = (chip) => {
-      if (chip.parentNode === bank) answer.appendChild(chip);
-      else bank.appendChild(chip);
-      fb.textContent = '';
-    };
-
-    const shuffled = shuffle([...originalTokens]);
-    shuffled.forEach(tok => {
-      const chip = makeChip(tok);
-      chip.addEventListener('click', () => onChipClick(chip));
-      bank.appendChild(chip);
+    chip.addEventListener('dragend', () => {
+      chip.classList.remove('dragging');
+      chip.style.opacity = '1';
+      chip.style.cursor = 'grab';
     });
 
-    function currentAnswer(){
-      const toks = Array.from(answer.querySelectorAll('button')).map(b => b.textContent);
-      return joinTokens(toks);
-    }
-
-    doneBtn.addEventListener('click', () => {
-      const got = normSpaces(currentAnswer());
-      const want = normSpaces(target);
-      if (!got) { fb.textContent = ''; return; }
-      if (got === want){
-        fb.textContent = t('correct');
-        setTimeout(() => { msg.remove(); onDone && onDone(); }, 450);
-      } else {
-        fb.textContent = t('wrong');
-      }
-    });
-
-    msg.appendChild(answer);
-    msg.appendChild(bank);
-
-    controls.appendChild(resetBtn);
-    controls.appendChild(doneBtn);
-    msg.appendChild(controls);
-    msg.appendChild(fb);
-
-    if (window.MathJax && window.MathJax.typesetPromise) {
-      window.MathJax.typesetPromise([msg]).catch(() => {});
-    }
-
-    root.appendChild(msg);
+    return chip;
   }
+
+  // Алгоритм вставки “перед/после” как в Wordwall
+  function getDragAfterElement(container, x){
+    const items = [...container.querySelectorAll('.kgb-chip:not(.dragging)')];
+    return items.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = x - (box.left + box.width / 2);
+      if (offset < 0 && offset > closest.offset) {
+        return { offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+  }
+
+  rail.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const dragging = rail.querySelector('.dragging');
+    if (!dragging) return;
+
+    const after = getDragAfterElement(rail, e.clientX);
+    if (after == null) {
+      rail.appendChild(dragging);
+    } else {
+      rail.insertBefore(dragging, after);
+    }
+  });
+
+  // наполняем: перемешанная дорожка
+  function fillShuffled(){
+    rail.innerHTML = '';
+    const shuffled = shuffle([...originalTokens]);
+    shuffled.forEach(tok => rail.appendChild(makeChip(tok)));
+    // в начале “подвинем” к старту
+    try { rail.scrollLeft = 0; } catch(_){}
+  }
+  fillShuffled();
+
+  function currentAnswer(){
+    const toks = [...rail.querySelectorAll('.kgb-chip')].map(x => x.textContent);
+    return joinTokens(toks);
+  }
+
+  resetBtn.addEventListener('click', () => {
+    fillShuffled();
+    fb.textContent = '';
+  });
+
+  doneBtn.addEventListener('click', () => {
+    const got = normSpaces(currentAnswer());
+    const want = normSpaces(target);
+
+    if (!got) return;
+
+    if (got === want){
+      fb.textContent = t('correct');
+      setTimeout(() => { msg.remove(); onDone && onDone(); }, 450);
+    } else {
+      fb.textContent = t('wrong');
+    }
+  });
+
+  // Сборка UI
+  msg.appendChild(hint);
+  msg.appendChild(rail);
+  controls.appendChild(resetBtn);
+  controls.appendChild(doneBtn);
+  msg.appendChild(controls);
+  msg.appendChild(fb);
+
+  if (window.MathJax?.typesetPromise) {
+    window.MathJax.typesetPromise([msg]).catch(()=>{});
+  }
+
+  root.appendChild(msg);
+}
+
 
   function showMessage(id, onDone) {
     const raw = TASKS[id] || "";
