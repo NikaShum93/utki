@@ -163,23 +163,7 @@
   const counterTxt  = document.createElement('span'); counterTxt.className='txt';
   counter.appendChild(counterIcon);
   counter.appendChild(counterTxt);
-      Object.assign(chipsWrap.style, {
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '10px',
-
-      width: '100%',            // занимает ширину карточки
-      maxWidth: '100%',
-
-      padding: '14px 12px',
-      borderRadius: '16px',
-      background: 'rgba(0,0,0,0.18)',
-      boxSizing: 'border-box'
-    });
-
-  root.appendChild(counter);
+       root.appendChild(counter);
 
   function refreshCounter(){
     total = Object.keys(TASKS).length;
@@ -575,19 +559,19 @@
 
 
     // зона с фишками
-    const chipsWrap = document.createElement('div');
-    Object.assign(chipsWrap.style, {
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '10px',
-      padding: '12px 10px',
-      borderRadius: '16px',
-      background: 'rgba(0,0,0,0.18)',
-      maxWidth: '100%',
-      boxSizing: 'border-box'
-    });
+   const chipsWrap = document.createElement('div');
+Object.assign(chipsWrap.style, {
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '12px 10px',
+  borderRadius: '16px',
+  background: 'rgba(0,0,0,0.18)',
+  maxWidth: '100%',
+  boxSizing: 'border-box'
+});
 
     let dragSrcIndex = null;
 
