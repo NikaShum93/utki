@@ -100,6 +100,10 @@
   };
   let styleTask = null;
   let styleFeedback = null;
+  let uiLang = 'ru';           // 'ru','en','es','de','fr','it','ja','zh'
+  let feedbackEnabled = true;  // можно отключить финальный фидбек
+  let orderMode = false;       // режим «собери предложение» для всех текстовых заданий
+
 
   // то, что можно переопределять через URL (для совместимости)
   let finalText = decodeURIComponent(urlParams.get('final') || "🎉 Well Done!");
@@ -183,6 +187,19 @@
         if (cfg?.style?.task)     styleTask     = cfg.style.task;
         if (cfg?.style?.feedback) styleFeedback = cfg.style.feedback;
 
+        // Язык интерфейса
+        if (cfg?.lang && ['ru','en','es','de','fr','it','ja','zh'].includes(cfg.lang)) uiLang = cfg.lang;
+        if (cfg?.language && ['ru','en','es','de','fr','it','ja','zh'].includes(cfg.language)) uiLang = cfg.language;
+        const urlLang = urlParams.get('lang');
+        if (urlLang && ['ru','en','es','de','fr','it','ja','zh'].includes(urlLang)) uiLang = urlLang;
+
+        // Можно отключить финальный фидбек
+        if (cfg?.feedbackEnabled === false || cfg?.disableFeedback === true) feedbackEnabled = false;
+
+        // Режим «собери предложение» (глобально для всех простых текстовых заданий)
+        if (cfg?.orderMode === true || cfg?.mode === 'order') orderMode = true;
+
+
                // Задачи из редактора: tasks: [{ question, correct:[], wrong:[] }]
         if (cfg?.tasks && cfg.tasks.length){
           // очищаем старые TASKS (заданные через URL)
@@ -190,6 +207,13 @@
 
           cfg.tasks.forEach((t, i) => {
             if (!t) return;
+
+            // Задание-картинка (PNG/GIF по ссылке)
+            if (t.type === 'image' && t.image) {
+              TASKS[i + 1] = { type: 'image', image: String(t.image).trim() };
+              return;
+            }
+
 
             const q       = (t.question || "").trim();
             const correct = Array.isArray(t.correct) ? t.correct : [];
@@ -355,6 +379,43 @@
     return arr;
   }
 
+  function t(key){
+    const dict = {
+      ru:{inputPlaceholder:'Впиши ответ...', btnOk:'OK', correct:'✅ Верно!', wrong:'❌ Попробуй ещё раз', reset:'Сбросить'},
+      en:{inputPlaceholder:'Type the answer...', btnOk:'OK', correct:'✅ Correct!', wrong:'❌ Try again', reset:'Reset'},
+      es:{inputPlaceholder:'Escribe la respuesta...', btnOk:'OK', correct:'✅ ¡Correcto!', wrong:'❌ Inténtalo de nuevo', reset:'Restablecer'},
+      de:{inputPlaceholder:'Antwort eingeben...', btnOk:'OK', correct:'✅ Richtig!', wrong:'❌ Versuch es noch einmal', reset:'Zurücksetzen'},
+      fr:{inputPlaceholder:'Écris la réponse...', btnOk:'OK', correct:'✅ Correct !', wrong:'❌ Réessaie', reset:'Réinitialiser'},
+      it:{inputPlaceholder:'Scrivi la risposta...', btnOk:'OK', correct:'✅ Corretto!', wrong:'❌ Riprova', reset:'Reimposta'},
+      ja:{inputPlaceholder:'答えを入力してください…', btnOk:'OK', correct:'✅ 正解！', wrong:'❌ もう一度', reset:'リセット'},
+      zh:{inputPlaceholder:'请输入答案…', btnOk:'OK', correct:'✅ 正确！', wrong:'❌ 再试一次', reset:'重置'}
+    };
+    const lang = dict[uiLang] ? uiLang : 'en';
+    return dict[lang][key] || key;
+  }
+
+  function normSpaces(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+
+  // токенизация предложения для режима «собери по порядку»
+  function tokenizeSentence(s){
+    const str = String(s||'').trim();
+    return (str.match(/[\p{L}\p{M}]+|\p{N}+|[^\s]/gu) || []);
+  }
+  function joinTokens(tokens){
+    const noSpaceBefore = new Set([',','.',':',';','!','?','…',')',']','}','»','”','％','%']);
+    const noSpaceAfter  = new Set(['(','[','{','«','“']);
+    let out = '';
+    for (let i=0;i<tokens.length;i++){
+      const tok = tokens[i];
+      const prev = tokens[i-1];
+      if (i===0) { out += tok; continue; }
+      if (noSpaceBefore.has(tok)) { out += tok; continue; }
+      if (noSpaceAfter.has(prev)) { out += tok; continue; }
+      out += ' ' + tok;
+    }
+    return out;
+  }
+
   // ----------------------
   // ОКНО ЗАДАНИЯ
   // Формат строки:
@@ -362,8 +423,175 @@
   // 2) "вопрос :: ответ" → режим "вписать ответ"
   // 3) "вопрос :: вариант1 :: вариант2 :: ..." → квиз, первый вариант = правильный
   // ----------------------
+  function showOrderSentence(sentence){
+    const originalTokens = tokenizeSentence(sentence);
+    const target = joinTokens(originalTokens);
+
+    const msg = document.createElement('div');
+    Object.assign(msg.style, {
+      position:'absolute',
+      top:'50%', left:'50%',
+      transform:'translate(-50%, -50%)',
+      background:'linear-gradient(135deg, #4facfe, #00f2fe)',
+      color:'white',
+      padding:'20px 22px',
+      borderRadius:'20px',
+      fontSize:'22px',
+      fontFamily:'sans-serif',
+      textAlign:'center',
+      boxShadow:'0 6px 16px rgba(0,0,0,0.3)',
+      pointerEvents:'auto',
+      zIndex:200,
+      maxWidth:'80vw'
+    });
+
+    // стили из редактора
+    if (styleTask){
+      if (styleTask.bgColor) msg.style.background = styleTask.bgColor;
+      if (styleTask.borderColor) msg.style.border = '2px solid ' + styleTask.borderColor;
+      if (typeof styleTask.opacity === 'number') msg.style.opacity = styleTask.opacity;
+      if (styleTask.fontSize) msg.style.fontSize = styleTask.fontSize + 'px';
+      if (styleTask.textColor) msg.style.color = styleTask.textColor;
+      else if (styleTask.color) msg.style.color = styleTask.color;
+      if (styleTask.neon){
+        const glow = styleTask.borderColor || '#ffffff';
+        msg.style.boxShadow = `0 0 18px ${glow}`;
+      }
+    }
+
+    const title = document.createElement('div');
+    title.style.marginBottom = '12px';
+    title.style.fontWeight = '700';
+    title.innerHTML = sentence;
+    msg.appendChild(title);
+
+    const answer = document.createElement('div');
+    Object.assign(answer.style, {
+      display:'flex', flexWrap:'wrap', gap:'8px', justifyContent:'center',
+      padding:'10px', borderRadius:'14px', background:'rgba(0,0,0,0.18)',
+      marginBottom:'10px', minHeight:'44px'
+    });
+
+    const bank = document.createElement('div');
+    Object.assign(bank.style, {
+      display:'flex', flexWrap:'wrap', gap:'8px', justifyContent:'center',
+      padding:'10px', borderRadius:'14px', background:'rgba(255,255,255,0.16)'
+    });
+
+    const makeChip = (text) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.textContent = text;
+      Object.assign(chip.style, {
+        border:'none', borderRadius:'999px',
+        padding:'8px 12px',
+        fontSize:'16px',
+        cursor:'pointer',
+        background:'rgba(255,255,255,0.92)',
+        color:'#2d3436'
+      });
+      return chip;
+    };
+
+    const shuffled = shuffle([...originalTokens]);
+    shuffled.forEach(tok => {
+      const chip = makeChip(tok);
+      chip.addEventListener('click', () => {
+        answer.appendChild(chip);
+        checkDone();
+      });
+      bank.appendChild(chip);
+    });
+
+    const fb = document.createElement('div');
+    fb.style.marginTop = '10px';
+    fb.style.minHeight = '24px';
+    fb.style.fontWeight = '700';
+
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = t('reset');
+    Object.assign(resetBtn.style, {
+      marginTop:'10px',
+      padding:'8px 16px',
+      borderRadius:'999px',
+      border:'none',
+      cursor:'pointer',
+      background:'rgba(0,0,0,0.25)',
+      color:'inherit',
+      fontWeight:'700'
+    });
+
+    resetBtn.addEventListener('click', () => {
+      const chips = Array.from(answer.querySelectorAll('button'));
+      chips.forEach(ch => bank.appendChild(ch));
+      fb.textContent = '';
+    });
+
+    function currentAnswer(){
+      const toks = Array.from(answer.querySelectorAll('button')).map(b => b.textContent);
+      return joinTokens(toks);
+    }
+
+    function checkDone(){
+      const toks = Array.from(answer.querySelectorAll('button'));
+      if (toks.length !== originalTokens.length) return;
+
+      const got = normSpaces(currentAnswer());
+      const want = normSpaces(target);
+      if (got === want){
+        fb.textContent = t('correct');
+        setTimeout(() => {
+          msg.remove();
+          if (popped === total && !finalUnlocked) { finalUnlocked = true; showFinal(); }
+        }, 500);
+      } else {
+        fb.textContent = t('wrong');
+      }
+    }
+
+    msg.appendChild(answer);
+    msg.appendChild(bank);
+    msg.appendChild(resetBtn);
+    msg.appendChild(fb);
+
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([msg]).catch(() => {});
+    }
+
+    root.appendChild(msg);
+  }
+
   function showMessage(id) {
     const raw = TASKS[id] || "";
+    // Задание-картинка (PNG/GIF): TASKS[id] = {type:'image', image:'...'}
+    if (raw && typeof raw === 'object' && raw.type === 'image' && raw.image) {
+      const wrap = document.createElement('div');
+      Object.assign(wrap.style, {
+        position:'absolute', top:'50%', left:'50%', transform:'translate(-50%, -50%)',
+        zIndex:200, pointerEvents:'auto',
+        background: (styleTask?.bgColor || 'rgba(0,0,0,0.55)'),
+        border: styleTask?.borderColor ? ('2px solid ' + styleTask.borderColor) : 'none',
+        borderRadius:'18px', padding:'14px',
+        boxShadow: styleTask?.neon ? ('0 0 18px ' + (styleTask.borderColor || '#fff')) : '0 6px 16px rgba(0,0,0,0.3)'
+      });
+      const img = document.createElement('img');
+      img.src = raw.image;
+      Object.assign(img.style, { maxWidth:'75vw', maxHeight:'75vh', borderRadius:'14px', display:'block' });
+      wrap.appendChild(img);
+      wrap.addEventListener('click', () => {
+        wrap.remove();
+        if (popped === total && !finalUnlocked) { finalUnlocked = true; showFinal(); }
+      });
+      root.appendChild(wrap);
+      return;
+    }
+
+    // Режим «собери предложение»: любое простое текстовое задание (без ::) превращаем в сборку слов
+    if (orderMode && typeof raw === 'string' && raw && !raw.includes('::')) {
+      showOrderSentence(raw);
+      return;
+    }
+
     const parts = raw.split("::");
     const question = (parts[0] || raw).trim();
     const options = parts.slice(1).map(s => s.trim()).filter(Boolean);
@@ -400,6 +628,9 @@
       }
       if (styleTask.fontSize) {
         msg.style.fontSize = styleTask.fontSize + 'px';
+      // цвет текста задания
+      if (styleTask.textColor) { msg.style.color = styleTask.textColor; }
+      else if (styleTask.color) { msg.style.color = styleTask.color; }
       }
       if (styleTask.neon) {
         const glow = styleTask.borderColor || '#ffffff';
@@ -438,11 +669,11 @@
         fontSize: '18px',
         color: '#2d3436'
       });
-      input.placeholder = 'Впиши ответ...';
+      input.placeholder = t('inputPlaceholder');
       msg.appendChild(input);
 
       const btn = document.createElement('button');
-      btn.textContent = 'OK';
+      btn.textContent = t('btnOk');
       Object.assign(btn.style, {
         padding: '8px 18px',
         borderRadius: '999px',
@@ -464,7 +695,7 @@
         const value = (input.value || '').trim().toLowerCase();
         if (!value) return;
         if (value === correct) {
-          fb.textContent = '✅ Correct!';
+          fb.textContent = t('correct');
           setTimeout(() => {
             msg.remove();
             if (popped === total && !finalUnlocked) {
@@ -473,7 +704,7 @@
             }
           }, 500);
         } else {
-          fb.textContent = '❌ Try again';
+          fb.textContent = t('wrong');
         }
       }
 
@@ -539,6 +770,7 @@
   // ФИНАЛЬНЫЙ ФИДБЕК (сундук / своя картинка)
   // ----------------------
   function showFinal() {
+    if (!feedbackEnabled) return;
     try { counter.remove(); } catch(_){}
 
     const chest = document.createElement('img');
@@ -619,6 +851,7 @@
         }
         if (styleFeedback.textColor) {
           label.style.color = styleFeedback.textColor;
+        if (styleFeedback.bgColor) { label.style.background = styleFeedback.bgColor; }
         }
         if (styleFeedback.neon) {
           const glow = styleFeedback.borderColor || '#ffffff';
