@@ -615,41 +615,42 @@
     const originalTokens = tokenizeSentence(sentence);
     const target = joinTokens(originalTokens);
 
-    const msg = makeTaskCardBase();
-    msg.style.textAlign = 'center';
+   const msg = makeTaskCardBase();
+msg.style.textAlign = 'center';
 
-    msg.style.width = 'auto';
-    msg.style.maxWidth = '94vw';
-    msg.style.minWidth = '0';
+msg.style.width = 'auto';
+msg.style.maxWidth = '94vw';
+msg.style.minWidth = '0';
 
-    msg.style.paddingLeft = '18px';
-    msg.style.paddingRight = '18px';
-    msg.style.paddingTop = '16px';
-    msg.style.paddingBottom = '16px';
+msg.style.paddingLeft = '18px';
+msg.style.paddingRight = '18px';
+msg.style.paddingTop = '16px';
+msg.style.paddingBottom = '16px';
 
-    msg.style.display = 'grid';
-    msg.style.gridTemplateColumns = '1fr auto';
-    msg.style.alignItems = 'center';
-    msg.style.gap = '12px';
-    msg.style.overflow = 'visible';
+/* ✅ вместо grid (1fr auto) делаем колонку:
+   чипы занимают всю ширину, кнопки идут ниже и не воруют место */
+msg.style.display = 'flex';
+msg.style.flexDirection = 'column';
+msg.style.alignItems = 'center';
+msg.style.gap = '12px';
+msg.style.overflow = 'visible';
 
-    const chipsWrap = document.createElement('div');
-    Object.assign(chipsWrap.style, {
-      display: 'flex',
-      flexWrap: 'nowrap',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '10px',
-      padding: '10px 10px',
-      borderRadius: '16px',
-      background: 'rgba(0,0,0,0.18)',
-      width: '100%',
-      maxWidth: '100%',
-      boxSizing: 'border-box',
-      overflowX: 'auto',
-      overflowY: 'hidden',
-      WebkitOverflowScrolling: 'touch'
-    });
+const chipsWrap = document.createElement('div');
+Object.assign(chipsWrap.style, {
+  display: 'flex',
+  flexWrap: 'wrap',            // ✅ перенос строк
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '10px 10px',
+  borderRadius: '16px',
+  background: 'rgba(0,0,0,0.18)',
+  width: '100%',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  overflow: 'visible'          // ✅ никаких overflowX/scroll
+});
+
 
     let dragSrcIndex = null;
 
