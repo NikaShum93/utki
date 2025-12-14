@@ -805,18 +805,21 @@ Object.assign(chipsWrap.style, {
       }
     });
 
-    controlsCol.appendChild(resetBtn);
+       controlsCol.appendChild(resetBtn);
     controlsCol.appendChild(doneBtn);
 
+    // ✅ ВОТ ЗДЕСЬ должны быть (кнопки будут СНИЗУ)
     msg.appendChild(chipsWrap);
     msg.appendChild(controlsCol);
     msg.appendChild(fb);
 
+    // сразу после этого — MathJax и добавление на сцену
     if (window.MathJax && window.MathJax.typesetPromise) {
       window.MathJax.typesetPromise([msg]).catch(() => {});
     }
 
     root.appendChild(msg);
+
   }
 
   function showMessage(id, onDone) {
