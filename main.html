@@ -169,7 +169,14 @@
       try{
         const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, { cache:'no-store' });
         const cfg = await res.json();
-
+      let quizMaxOptions = 4;
+let quizUseOtherCorrect = false;
+          if (typeof cfg?.quizMaxOptions === 'number') {
+  quizMaxOptions = Math.max(2, Math.min(10, Math.floor(cfg.quizMaxOptions)));
+}
+if (cfg?.quizUseOtherCorrect === true) {
+  quizUseOtherCorrect = true;
+}
         // Картинка светлячков
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
 
@@ -227,24 +234,51 @@
 
             if (q) parts.push(q);
 
-            if (correct.length) {
-              // первый правильный — главный ответ
-              parts.push(correct[0]);
-              // остальные правильные тоже можно добавить как варианты
-              for (let j = 1; j < correct.length; j++) {
-                parts.push(correct[j]);
-              }
-            }
+          // --- строим варианты квиза с лимитом ---
+const clean = (arr) => (arr || [])
+  .map(x => (x ?? '').toString().replace(/\s+/g, ' ').trim())
+  .filter(Boolean);
 
-            wrong.forEach(w => {
-              const s = (w || "").trim();
-              if (s) parts.push(s);
-            });
+const correctClean = clean(correct);
+const wrongClean   = clean(wrong);
 
-            const line = parts.join(" :: ").trim();
-            if (line) {
-              TASKS[i + 1] = line;
-            }
+if (correctClean.length) {
+  const correctMain = correctClean[0];
+
+  // собираем пул вариантов: 1 правильный + (wrong) + (другие правильные по галочке)
+  const picked = [correctMain];
+
+  // 1) сначала добираем из wrong
+  const wrongPool = shuffle([...wrongClean]);
+  while (picked.length < quizMaxOptions && wrongPool.length) {
+    const w = wrongPool.shift();
+    if (w && !picked.includes(w)) picked.push(w);
+  }
+
+  // 2) если не хватило и включён добор — добираем из других correct
+  if (quizUseOtherCorrect) {
+    const otherPool = shuffle(correctClean.slice(1));
+    while (picked.length < quizMaxOptions && otherPool.length) {
+      const c = otherPool.shift();
+      if (c && !picked.includes(c)) picked.push(c);
+    }
+  }
+
+  // ВАЖНО: формат движка = "вопрос :: правильный :: варианты..."
+  // и первый вариант после вопроса должен быть правильным
+  picked.forEach(v => parts.push(v));
+} else {
+  // если правильного нет — это просто текст/вопрос без ответов
+  // (оставляем как было: parts уже содержит question, дальше ничего)
+}
+
+// если правильный был, но вариантов вышло 1 — получится input (вопрос :: ответ)
+// если вариантов >=2 — получится quiz (вопрос :: правильный :: ...)
+
+const line = parts.join(" :: ").trim();
+if (line) {
+  TASKS[i + 1] = line;
+}
           });
         }
 
