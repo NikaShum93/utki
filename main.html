@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -493,12 +493,6 @@ if (line) {
       }
     }
 
-    const title = document.createElement('div');
-    title.style.marginBottom = '12px';
-    title.style.fontWeight = '700';
-    title.innerHTML = sentence;
-    msg.appendChild(title);
-
     const answer = document.createElement('div');
     Object.assign(answer.style, {
       display:'flex', flexWrap:'wrap', gap:'8px', justifyContent:'center',
@@ -526,16 +520,6 @@ if (line) {
       });
       return chip;
     };
-
-    const shuffled = shuffle([...originalTokens]);
-    shuffled.forEach(tok => {
-      const chip = makeChip(tok);
-      chip.addEventListener('click', () => {
-        answer.appendChild(chip);
-        checkDone();
-      });
-      bank.appendChild(chip);
-    });
 
     const fb = document.createElement('div');
     fb.style.marginTop = '10px';
@@ -568,7 +552,7 @@ if (line) {
 
     function checkDone(){
       const toks = Array.from(answer.querySelectorAll('button'));
-      if (toks.length !== originalTokens.length) return;
+      if (toks.length !== originalTokens.length) { fb.textContent = ''; return; }
 
       const got = normSpaces(currentAnswer());
       const want = normSpaces(target);
@@ -582,6 +566,22 @@ if (line) {
         fb.textContent = t('wrong');
       }
     }
+
+    const onChipClick = (chip) => {
+      if (chip.parentNode === bank) {
+        answer.appendChild(chip);
+      } else {
+        bank.appendChild(chip);
+      }
+      checkDone();
+    };
+
+    const shuffled = shuffle([...originalTokens]);
+    shuffled.forEach(tok => {
+      const chip = makeChip(tok);
+      chip.addEventListener('click', () => onChipClick(chip));
+      bank.appendChild(chip);
+    });
 
     msg.appendChild(answer);
     msg.appendChild(bank);
