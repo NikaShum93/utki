@@ -163,20 +163,22 @@
   const counterTxt  = document.createElement('span'); counterTxt.className='txt';
   counter.appendChild(counterIcon);
   counter.appendChild(counterTxt);
-  Object.assign(counter.style, {
-    position: 'absolute',
-    top: '20px',
-    left: '20px',
-    background: 'linear-gradient(135deg, #f6f9fc, #dff9fb)',
-    padding: '10px 16px',
-    borderRadius: '12px',
-    fontFamily: 'sans-serif',
-    fontSize: '18px',
-    color: '#2d3436',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    zIndex: 300,
-    pointerEvents: 'none'
-  });
+      Object.assign(chipsWrap.style, {
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '10px',
+
+      width: '100%',            // занимает ширину карточки
+      maxWidth: '100%',
+
+      padding: '14px 12px',
+      borderRadius: '16px',
+      background: 'rgba(0,0,0,0.18)',
+      boxSizing: 'border-box'
+    });
+
   root.appendChild(counter);
 
   function refreshCounter(){
