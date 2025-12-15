@@ -299,10 +299,12 @@
     pendingBubbleEl = null;
     pendingBubbleId = null;
 
-    if (popped === total && !finalUnlocked) {
-      finalUnlocked = true;
-      showFinal();
-    }
+   if (popped === total && !finalUnlocked) {
+  finalUnlocked = true;
+  playSound(sounds.open);   // ✅ победный звук (можно заменить на отдельный, если захочешь)
+  showFinal();
+}
+
   }
 
   // Инициализация: тянем JSON, если есть id
@@ -1117,21 +1119,24 @@ function wrapLatexIfNeeded(s){
       fb.style.fontWeight = '900';
       msg.appendChild(fb);
 
-      function checkAnswer() {
-        const value = (input.value || '').trim().toLowerCase();
-        if (!value) return;
+     function checkAnswer() {
+  const value = (input.value || '').trim().toLowerCase();
+  if (!value) return;
 
-        if (value === correct) {
-          fb.textContent = t('correct');
-          launchFirework(msg);
-          setTimeout(() => {
-            msg.remove();
-            onDone && onDone();
-          }, 450);
-        } else {
-          fb.textContent = t('wrong');
-        }
-      }
+  if (value === correct) {
+    fb.textContent = t('correct');
+    playSound(sounds.correct);      // ✅ звук "верно"
+    launchFirework(msg);
+    setTimeout(() => {
+      msg.remove();
+      onDone && onDone();
+    }, 450);
+  } else {
+    fb.textContent = t('wrong');
+    playSound(sounds.wrong);        // ✅ звук "ошибка"
+  }
+}
+
 
       btn.addEventListener('click', checkAnswer);
       input.addEventListener('keydown', (e) => {
@@ -1163,20 +1168,23 @@ function wrapLatexIfNeeded(s){
           background: 'rgba(255,255,255,0.92)',
           color: '#2d3436'
         });
-        btn.addEventListener('click', () => {
-          if (opt === correct) {
-            btn.style.background = '#00b894';
-            btn.style.color = '#fff';
-            launchFirework(msg);
-            setTimeout(() => {
-              msg.remove();
-              onDone && onDone();
-            }, 450);
-          } else {
-            btn.style.background = '#d63031';
-            btn.style.color = '#fff';
-          }
-        });
+       btn.addEventListener('click', () => {
+  if (opt === correct) {
+    btn.style.background = '#00b894';
+    btn.style.color = '#fff';
+    playSound(sounds.correct);      // ✅ звук "верно"
+    launchFirework(msg);
+    setTimeout(() => {
+      msg.remove();
+      onDone && onDone();
+    }, 450);
+  } else {
+    btn.style.background = '#d63031';
+    btn.style.color = '#fff';
+    playSound(sounds.wrong);        // ✅ звук "ошибка"
+  }
+});
+
         list.appendChild(btn);
       });
 
