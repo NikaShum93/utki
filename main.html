@@ -146,9 +146,12 @@
   // Конфиг из редактора
   let feedbackImage = "";
   let sounds = {
-    pop:  "https://nikashum93.github.io/utki/pop.mp3",
-    open: "https://nikashum93.github.io/utki/open.mp3"
-  };
+  pop:     "https://nikashum93.github.io/utki/pop.mp3",
+  open:    "https://nikashum93.github.io/utki/open.mp3",
+  correct: "https://nikashum93.github.io/utki/correct.mp3",
+  wrong:   "https://nikashum93.github.io/utki/wrong.mp3"
+};
+
   let styleTask = null;
   let styleFeedback = null;
   let uiLang = 'ru';           // 'ru','en','es','de','fr','it','ja','zh'
@@ -317,6 +320,8 @@
 
         if (cfg?.sounds?.pop)  sounds.pop  = cfg.sounds.pop;
         if (cfg?.sounds?.open) sounds.open = cfg.sounds.open;
+if (cfg?.sounds?.correct) sounds.correct = cfg.sounds.correct;
+if (cfg?.sounds?.wrong)   sounds.wrong   = cfg.sounds.wrong;
 
         if (cfg?.style?.task)     styleTask     = cfg.style.task;
         if (cfg?.style?.feedback) styleFeedback = cfg.style.feedback;
