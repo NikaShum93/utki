@@ -312,7 +312,11 @@
     if (cfgId){
       try{
         const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, { cache:'no-store' });
-        const cfg = await res.json();
+            const cfg = await res.json();
+
+        // ✅ ВАЖНО: каждый запуск сбрасываем режим фидбека в дефолт
+        // иначе iframe/кэш/предыдущие состояния могут оставить "text" и картинка пропадёт
+        feedbackMode = "both";
 
         let quizMaxOptions = 4;
         let quizUseOtherCorrect = false;
@@ -322,6 +326,7 @@
         if (cfg?.quizUseOtherCorrect === true) {
           quizUseOtherCorrect = true;
         }
+
 
         if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
         if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
@@ -999,9 +1004,9 @@ function wrapLatexIfNeeded(s){
     }
 
     root.appendChild(msg);
-    if (window.MathJax?.typesetPromise) {
-  MathJax.typesetPromise([msg]).catch(()=>{});
-}
+    if (label.isConnected && window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([label]).catch(() => {});
+      }
   }
 
   function showMessage(id, onDone) {
@@ -1202,9 +1207,9 @@ function wrapLatexIfNeeded(s){
 
    
     root.appendChild(msg);
-     if (window.MathJax?.typesetPromise) {
-  MathJax.typesetPromise([msg]).catch(()=>{});
-}
+    if (label.isConnected && window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([label]).catch(() => {});
+      }
   }
 
   // ----------------------
