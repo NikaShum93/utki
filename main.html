@@ -653,6 +653,18 @@
     }catch(_){}
   }
 
+  // ✅ Надёжный MathJax typeset для конкретного узла
+  function typeset(el){
+    try{
+      if (window.MathJax?.typesetPromise){
+        // чистим и размечаем именно этот узел
+        window.MathJax.typesetClear?.([el]);
+        window.MathJax.typesetPromise([el]).catch(()=>{});
+      }
+    }catch(_){}
+  }
+
+
   function launchFirework(anchorEl){
     const r = (anchorEl?.getBoundingClientRect ? anchorEl.getBoundingClientRect() : null);
     const cx = r ? (r.left + r.width/2) : (window.innerWidth/2);
@@ -721,9 +733,22 @@ function looksLikeLatex(s){
 }
 
 function wrapLatexIfNeeded(s){
-  s = String(s||'');
-  return looksLikeLatex(s) ? `\\(${s.trim()}\\)` : s;
+  s = String(s||'').trim();
+
+  // ✅ если уже есть любая math-разметка — НИЧЕГО НЕ ДЕЛАЕМ
+  if (
+    s.includes('\\(') ||
+    s.includes('\\)') ||
+    s.includes('\\[') ||
+    s.includes('\\]') ||
+    s.includes('$$')
+  ) {
+    return s;
+  }
+
+  return looksLikeLatex(s) ? `\\(${s}\\)` : s;
 }
+
 
   function tokenizeSentence(s){
     const str = String(s||'').trim();
@@ -1003,10 +1028,8 @@ function wrapLatexIfNeeded(s){
       window.MathJax.typesetPromise([msg]).catch(() => {});
     }
 
-    root.appendChild(msg);
-    if (label.isConnected && window.MathJax?.typesetPromise) {
-        window.MathJax.typesetPromise([label]).catch(() => {});
-      }
+      root.appendChild(msg);
+    typeset(msg);
   }
 
   function showMessage(id, onDone) {
@@ -1319,14 +1342,10 @@ function wrapLatexIfNeeded(s){
         setTimeout(() => s.remove(), 1500);
       }
 
-      if (window.MathJax?.typesetPromise) {
-        window.MathJax.typesetPromise([label]).catch(() => {});
-      }
+     typeset(label);
     });
 
-    if (window.MathJax?.typesetPromise) {
-      window.MathJax.typesetPromise([label]).catch(() => {});
-    }
+    typeset(label);
   }
 
 })();
