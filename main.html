@@ -651,14 +651,20 @@
 
   // ✅ Надёжный MathJax typeset для конкретного узла
   function typeset(el){
-    try{
-      if (window.MathJax?.typesetPromise){
-        // чистим и размечаем именно этот узел
-        window.MathJax.typesetClear?.([el]);
-        window.MathJax.typesetPromise([el]).catch(()=>{});
-      }
-    }catch(_){}
-  }
+  try{
+    const MJ = window.MathJax;
+    if(!MJ) return;
+
+    const ready = MJ.startup?.promise ? MJ.startup.promise : Promise.resolve();
+
+    ready.then(() => {
+      try{
+        MJ.typesetClear?.([el]);
+        MJ.typesetPromise?.([el])?.catch(()=>{});
+      }catch(_){}
+    }).catch(()=>{});
+  }catch(_){}
+}
 
 
   function launchFirework(anchorEl){
@@ -1225,10 +1231,8 @@ function wrapLatexIfNeeded(s){
     }
 
    
-    root.appendChild(msg);
-    if (label.isConnected && window.MathJax?.typesetPromise) {
-        window.MathJax.typesetPromise([label]).catch(() => {});
-      }
+  root.appendChild(msg);
+typeset(msg);
   }
 
   // ----------------------
