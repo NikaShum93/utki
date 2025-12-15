@@ -312,11 +312,7 @@
     if (cfgId){
       try{
         const res = await fetch(`${JSON_BASE}${encodeURIComponent(cfgId)}.json?v=${Date.now()}`, { cache:'no-store' });
-            const cfg = await res.json();
-
-        // ✅ ВАЖНО: каждый запуск сбрасываем режим фидбека в дефолт
-        // иначе iframe/кэш/предыдущие состояния могут оставить "text" и картинка пропадёт
-        feedbackMode = "both";
+          const cfg = await res.json();
 
         let quizMaxOptions = 4;
         let quizUseOtherCorrect = false;
@@ -808,10 +804,10 @@ function wrapLatexIfNeeded(s){
   // ----------------------
   // ORDER MODE — перетаскивание слов (иконки слева/справа, центр по высоте)
   // ----------------------
-  function showOrderSentence(sentence, onDone){
-    sentence = wrapLatexIfNeeded(sentence);
-    const originalTokens = tokenizeSentence(sentence);
-    const target = joinTokens(originalTokens);
+ function showOrderSentence(sentence, onDone){
+  // order-mode НЕ трогаем MathJax вообще
+  const originalTokens = tokenizeSentence(sentence);
+  const target = joinTokens(originalTokens);
 
     const msg = makeTaskCardBase();
     msg.style.textAlign = 'center';
