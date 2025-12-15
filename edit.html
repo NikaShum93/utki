@@ -315,23 +315,32 @@
         </div>
       </div>
 
-      <div class="section">
-        <h2>🔊 Звуки</h2>
+     <div class="section">
+  <h2>🔊 Звуки</h2>
 
-        <div class="row">
-          <div>
-            <label>Звук лопания (URL)</label>
-            <input type="url" id="popSound" placeholder="https://.../pop.mp3">
-          </div>
-          <div>
-            <label>Звук фидбека (URL)</label>
-            <input type="url" id="openSound" placeholder="https://.../open.mp3">
-          </div>
-        </div>
+  <div class="row">
+    <div>
+      <label>Звук лопания (URL)</label>
+      <input type="url" id="popSound" placeholder="https://.../pop.mp3">
+    </div>
+    <div>
+      <label>Звук фидбека (URL)</label>
+      <input type="url" id="openSound" placeholder="https://.../open.mp3">
+    </div>
+  </div>
 
-        <label>Звук ошибки (URL, опционально)</label>
-        <input type="url" id="wrongSound" placeholder="https://.../wrong.mp3">
-      </div>
+  <div class="row" style="margin-top:10px;">
+    <div>
+      <label>Звук правильного ответа (URL)</label>
+      <input type="url" id="correctSound" placeholder="https://.../correct.mp3">
+    </div>
+    <div>
+      <label>Звук ошибки (URL, опционально)</label>
+      <input type="url" id="wrongSound" placeholder="https://.../wrong.mp3">
+    </div>
+  </div>
+</div>
+
 
       <div class="section">
         <h2>🎯 Задания</h2>
@@ -813,9 +822,11 @@
       const finalFeedback = $('#finalFeedback').value.trim();
       const feedbackImage = $('#feedbackImage').value.trim();
 
-      const popSoundUrl   = $('#popSound').value.trim()   || 'https://nikashum93.github.io/utki/pop.mp3';
-      const openSoundUrl  = $('#openSound').value.trim()  || 'https://nikashum93.github.io/utki/open.mp3';
-      const wrongSoundUrl = $('#wrongSound').value.trim();
+     const popSoundUrl     = $('#popSound').value.trim()     || 'https://nikashum93.github.io/utki/pop.mp3';
+const openSoundUrl    = $('#openSound').value.trim()    || 'https://nikashum93.github.io/utki/open.mp3';
+const correctSoundUrl = $('#correctSound')?.value.trim() || 'https://nikashum93.github.io/utki/correct.mp3';
+const wrongSoundUrl   = $('#wrongSound').value.trim();
+
 
       const mode = getMode();
 
@@ -885,11 +896,13 @@
         orderMode: (mode === 'order'),
         lockNext: !!lockNext,
         bubbleSize,
-        sounds: {
-          pop:  popSoundUrl,
-          open: openSoundUrl,
-          wrong: wrongSoundUrl
-        },
+       sounds: {
+  pop:     popSoundUrl,
+  open:    openSoundUrl,
+  correct: correctSoundUrl,
+  wrong:   wrongSoundUrl
+},
+
         style: {
           bgImage,
           bubbleSize,
@@ -1221,7 +1234,8 @@
       'taskBgColor','taskBorderColor','taskTextColor','taskBgOpacity','taskNeon',
       'feedbackBgColor','feedbackBorderColor','feedbackTextColor','feedbackNeon',
       'baseFontSize','feedbackEnabled','quizMaxOptions','quizUseOtherCorrect','autoDistractors',
-      'lockNext','popSound','openSound','wrongSound','correctAnswers','wrongAnswers'
+     'lockNext','popSound','openSound','correctSound','wrongSound','correctAnswers','wrongAnswers'
+
     ].forEach(id => {
       const el = $('#'+id);
       if(!el) return;
