@@ -693,9 +693,17 @@
 function looksLikeLatex(s){
   s = String(s||'').trim();
   if(!s) return false;
-  if (s.includes('\\(') || s.includes('\\[') || (s.includes('$') && s.lastIndexOf('$') !== s.indexOf('$'))) return false;
-  return /\\[a-zA-Z]+/.test(s) || /[_^]/.test(s) || /{[^}]+}/.test(s);
+
+  // если уже есть явные маркеры — не оборачиваем повторно
+  if (s.includes('\\(') || s.includes('\\[')) return false;
+
+  // если есть $...$ — тоже не трогаем (это уже "явно")
+  if (s.includes('$') && s.lastIndexOf('$') !== s.indexOf('$')) return false;
+
+  // считаем формулой ТОЛЬКО если есть TeX-команды вида \frac \sqrt \alpha и т.п.
+  return /\\[a-zA-Z]+/.test(s);
 }
+
 function wrapLatexIfNeeded(s){
   s = String(s||'');
   return looksLikeLatex(s) ? `\\(${s.trim()}\\)` : s;
