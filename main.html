@@ -696,15 +696,27 @@ function looksLikeLatex(s){
   s = String(s||'').trim();
   if(!s) return false;
 
-  // если уже есть явные маркеры — не оборачиваем повторно
+  // если уже размечено — не трогаем
   if (s.includes('\\(') || s.includes('\\[')) return false;
-
-  // если есть $...$ — тоже не трогаем (это уже "явно")
   if (s.includes('$') && s.lastIndexOf('$') !== s.indexOf('$')) return false;
 
-  // считаем формулой ТОЛЬКО если есть TeX-команды вида \frac \sqrt \alpha и т.п.
-  return /\\[a-zA-Z]+/.test(s);
+  // если есть явные пробелы между словами — это текст
+  if (/\s/.test(s)) return false;
+
+  // если это gap: ___ или _ _ _
+  if (/^_+$/.test(s)) return false;
+  if (/(_\s+_)+/.test(s)) return false;
+
+  // TeX-команды
+  if (/\\[a-zA-Z]+/.test(s)) return true;
+
+  // степени / индексы БЕЗ пробелов
+  // x^2, x^{2}, a_1, a_{n}
+  if (/[A-Za-z0-9][\^_](\{[^}]+\}|[A-Za-z0-9]+)/.test(s)) return true;
+
+  return false;
 }
+
 
 function wrapLatexIfNeeded(s){
   s = String(s||'');
