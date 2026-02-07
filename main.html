@@ -162,10 +162,11 @@
   };
 
   let styleTask = null;
-let styleFeedback = null;
-  let uiLang = 'ru';           
-  let feedbackEnabled = true;  
+  let styleFeedback = null;
+  let uiLang = 'ru';            
+  let feedbackEnabled = true;   
   let feedbackMode = 'both';
+  let feedbackImgSize = 300;
   let orderMode = false;       // режим «собери предложение» для всех текстовых заданий
 
   // ✅ ВАЖНО: lockNext теперь означает НЕ "строгий порядок",
@@ -325,12 +326,13 @@ let styleFeedback = null;
         }
 
 
-      if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
-        if (typeof cfg?.style?.bubbleSize === 'number') BUBBLE_SIZE = cfg.style.bubbleSize; // Читаем размер
+   if (cfg?.style?.bgImage) bubbleImg = cfg.style.bgImage;
+        if (typeof cfg?.style?.bubbleSize === 'number') BUBBLE_SIZE = cfg.style.bubbleSize; 
         if (typeof cfg?.finalFeedback === 'string') finalText = cfg.finalFeedback;
         if (cfg?.feedbackImage) feedbackImage = cfg.feedbackImage;
-        if (cfg?.feedbackMode) feedbackMode = cfg.feedbackMode; // Читаем режим фидбека
-
+        if (cfg?.feedbackMode) feedbackMode = cfg.feedbackMode; 
+        // Читаем размер картинки фидбека:
+        if (typeof cfg?.style?.feedback?.imageSize === 'number') feedbackImgSize = cfg.style.feedback.imageSize;
         if (cfg?.sounds?.pop)     sounds.pop     = cfg.sounds.pop;
         if (cfg?.sounds?.open)    sounds.open    = cfg.sounds.open;
         if (cfg?.sounds?.correct) sounds.correct = cfg.sounds.correct;
@@ -1244,6 +1246,9 @@ typeset(msg);
 // ----------------------
   // ФИНАЛЬНЫЙ ФИДБЕК
   // ----------------------
+ // ----------------------
+  // ФИНАЛЬНЫЙ ФИДБЕК
+  // ----------------------
   function showFinal() {
     if (!feedbackEnabled) return;
     try { counter.remove(); } catch(_){}
@@ -1267,7 +1272,7 @@ typeset(msg);
       alignItems: 'center',
       gap: '14px',
       maxWidth: '80vw',
-      maxHeight: '85vh',
+      maxHeight: '90vh', // Чуть увеличили место
       pointerEvents: 'auto'
     });
 
@@ -1304,19 +1309,18 @@ typeset(msg);
       }
     }
 
-    // Если режим не "только картинка" — показываем текст
     if (feedbackMode !== 'image') {
        wrap.appendChild(label);
     }
 
-    // Если режим не "только текст" — создаем и показываем картинку
     if (feedbackMode !== 'text') {
         const chest = document.createElement('img');
         chest.src = feedbackImage || 'https://i.postimg.cc/prHF0XG1/AI-(4).gif';
         Object.assign(chest.style, {
           display: 'block',
-          maxWidth: '70vw',
-          maxHeight: '55vh',
+          maxWidth: '80vw',
+          // ВОТ ТУТ МЫ ИСПОЛЬЗУЕМ НАСТРОЙКУ:
+          maxHeight: feedbackImgSize + 'px', 
           width: 'auto',
           height: 'auto',
           objectFit: 'contain',
@@ -1326,13 +1330,11 @@ typeset(msg);
           filter: 'drop-shadow(0 16px 28px rgba(0,0,0,.35))'
         });
 
-        // КЛИК ТОЛЬКО НА КАРТИНКУ
         const openSound = new Audio(sounds.open);
         chest.addEventListener('click', () => {
           chest.style.transform = 'scale(1.08)';
           try { openSound.currentTime = 0; openSound.play().catch(()=>{}); } catch(_){}
 
-          // Салют (код внутри)
           for (let i = 0; i < 40; i++) {
             const s = document.createElement('div');
             s.textContent = ['✨','💫','🌟','🔮'][Math.floor(Math.random() * 4)];
@@ -1360,7 +1362,6 @@ typeset(msg);
 
     typeset(label);
   }
-
 })();
   </script>
 </body>
