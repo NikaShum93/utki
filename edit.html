@@ -479,7 +479,7 @@
 
         <div class="divider"></div>
 
-        <h2>💫 Финальный фидбек</h2>
+       <h2>💫 Финальный фидбек</h2>
 
         <div class="row">
           <div>
@@ -488,10 +488,16 @@
           </div>
           <div>
             <label>Картинка фидбека (URL)</label>
-            <input type="url" id="feedbackImage" placeholder="https://.../chest.png">
+            <input type="url" id="feedbackImage" placeholder="https://..." value="https://i.postimg.cc/prHF0XG1/AI-(4).gif">
           </div>
         </div>
 
+        <label>Размер картинки фидбека (px)</label>
+        <div class="range-row">
+          <input type="range" id="fbSizeRange" min="100" max="600" step="10" value="300">
+          <input type="number" id="fbSize" min="100" max="800" step="10" value="300">
+        </div>
+        <div class="small-hint">Влияет на высоту картинки в игре.</div>
         <label style="margin-top:10px;">
           <input type="checkbox" id="feedbackEnabled" checked>
           Показывать финальный фидбек
@@ -819,10 +825,12 @@
       const bgImage = $('#bgImage').value.trim();
       const bubbleSize = Math.max(40, Math.min(200, parseInt($('#bubbleSize').value || '80', 10)));
 
-      const finalFeedback = $('#finalFeedback').value.trim();
+     const finalFeedback = $('#finalFeedback').value.trim();
       const feedbackImage = $('#feedbackImage').value.trim();
+      // 👇 ДОБАВИЛИ ЭТУ СТРОКУ:
+      const feedbackImageSize = parseInt($('#fbSize').value || '300', 10);
 
-     const popSoundUrl     = $('#popSound').value.trim()     || 'https://nikashum93.github.io/utki/pop.mp3';
+      const popSoundUrl      = $('#popSound').value.trim()      || 'https://nikashum93.github.io/utki/pop.mp3';
 const openSoundUrl    = $('#openSound').value.trim()    || 'https://nikashum93.github.io/utki/open.mp3';
 const correctSoundUrl = $('#correctSound')?.value.trim() || 'https://nikashum93.github.io/utki/correct.mp3';
 const wrongSoundUrl   = $('#wrongSound').value.trim();
@@ -913,12 +921,13 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
             fontSize:    baseFontSize,
             neon:        taskNeon
           },
-          feedback: {
-            bgColor:     feedbackBgColor,
-            borderColor: feedbackBorderColor,
-            textColor:   feedbackTextColor,
-            fontSize:    baseFontSize,
-            neon:        feedbackNeon
+         feedback: {
+            bgColor:      feedbackBgColor,
+            borderColor:  feedbackBorderColor,
+            textColor:    feedbackTextColor,
+            fontSize:     baseFontSize,
+            neon:         feedbackNeon,
+            imageSize:    feedbackImageSize // 👈 ДОБАВИЛИ ЗАПЯТУЮ ВЫШЕ И ЭТУ СТРОКУ
           }
         },
         finalFeedback,
@@ -1014,8 +1023,17 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
       refreshPreview();
     }
 
+    // 👇 ДОБАВИЛИ НОВУЮ ФУНКЦИЮ:
+    function syncFbSize(from){
+      const r = $('#fbSizeRange');
+      const n = $('#fbSize');
+      if (from === 'range') n.value = r.value;
+      else r.value = n.value;
+      refreshPreview();
+    }
+
     // Preview
-    // Preview
+  
     function refreshPreview(){
       const cfg = collectConfig();
 
@@ -1197,7 +1215,9 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
 
       if (fbMode === 'both' || fbMode === 'image'){
         const img = document.createElement('div');
-        img.style.height = '96px';
+        const sz = cfg.style.feedback.imageSize || 300;
+        img.style.height = sz + 'px';
+        img.style.maxHeight = '300px';
         img.style.borderRadius = '14px';
         img.style.border = '1px solid rgba(255,255,255,.14)';
         img.style.background = cfg.feedbackImage
@@ -1243,12 +1263,17 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
       r.addEventListener('change', setModeHint);
     });
 
-    $('#bubbleSizeRange').addEventListener('input', ()=>syncBubbleSize('range'));
+   $('#bubbleSizeRange').addEventListener('input', ()=>syncBubbleSize('range'));
     $('#bubbleSize').addEventListener('input', ()=>syncBubbleSize('number'));
+
+    // 👇 ДОБАВИЛИ ЭТИ ДВЕ СТРОКИ:
+    $('#fbSizeRange').addEventListener('input', ()=>syncFbSize('range'));
+    $('#fbSize').addEventListener('input', ()=>syncFbSize('number'));
 
     // live preview
     [
-      'bgImage','questions','finalFeedback','feedbackImage',
+      // 👇 ДОБАВИЛИ 'fbSize' СЮДА:
+      'bgImage','questions','finalFeedback','feedbackImage','fbSize',
       'taskBgColor','taskBorderColor','taskTextColor','taskBgOpacity','taskNeon',
       'feedbackBgColor','feedbackBorderColor','feedbackTextColor','feedbackNeon',
       'baseFontSize','feedbackEnabled','quizMaxOptions','quizUseOtherCorrect','autoDistractors',
