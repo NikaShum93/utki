@@ -1015,12 +1015,14 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
     }
 
     // Preview
+    // Preview
     function refreshPreview(){
       const cfg = collectConfig();
 
       // HUD
       const url = cfg.style.bgImage;
       $('#iconPrev').style.backgroundImage = url ? `url(${url})` : 'none';
+      // Считаем реальное количество вопросов
       const lines = $('#questions').value.split('\n').map(s=>s.trim()).filter(Boolean).length;
       $('#textPrev').textContent = '0 / ' + (lines || 0);
 
@@ -1054,7 +1056,9 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
         : '0 10px 26px rgba(0,0,0,.25)';
 
       const q = document.createElement('div');
-      q.textContent = 'Why do you like learning English?';
+      // БЕРЕМ РЕАЛЬНЫЙ ТЕКСТ ИЗ ПОЛЯ ВОПРОСОВ
+      const rawQ = $('#questions').value.split('\n')[0]; 
+      q.textContent = rawQ ? rawQ.trim() : 'Task Preview...';
       q.style.marginBottom = '10px';
       modal.appendChild(q);
 
@@ -1066,21 +1070,33 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
         list.style.flexDirection = 'column';
         list.style.gap = '8px';
 
-        ['Because I love it','Because it is easy','Because I can travel','Because I must'].forEach(txt=>{
+        // БЕРЕМ РЕАЛЬНЫЕ ОТВЕТЫ ДЛЯ ПРЕВЬЮ
+        const cRow = $('#correctAnswers').value.split('\n')[0] || '';
+        const wRow = $('#wrongAnswers').value.split('\n')[0] || '';
+        
+        let previewOpts = [];
+        if(cRow) previewOpts.push(cRow.split('|')[0]); // Первый правильный
+        if(wRow) previewOpts.push(...wRow.split('|').slice(0, 3)); // Пару неправильных
+        
+        // Если пусто, покажем заглушки
+        if(previewOpts.length === 0) previewOpts = ['Option A', 'Option B', 'Option C', 'Option D'];
+
+        previewOpts.forEach(txt=>{
           const b = document.createElement('button');
           b.type = 'button';
-          b.textContent = txt;
+          b.textContent = txt.trim();
           b.style.border = 'none';
           b.style.borderRadius = '999px';
           b.style.padding = '10px 12px';
           b.style.background = 'rgba(255,255,255,.90)';
           b.style.color = '#111';
-          b.style.fontSize = fs + 'px';     // НЕ меньше текста задания
+          b.style.fontSize = fs + 'px'; 
           b.style.fontWeight = '900';
           b.style.cursor = 'pointer';
           list.appendChild(b);
         });
         modal.appendChild(list);
+
       } else if (mode === 'input'){
         const inp = document.createElement('input');
         inp.type = 'text';
@@ -1109,14 +1125,17 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
         modal.appendChild(ok);
 
       } else if (mode === 'order'){
-        // ONLY chips + button "Done" (no shown sentence сверху!)
         const chips = document.createElement('div');
         chips.style.display = 'flex';
         chips.style.flexWrap = 'wrap';
         chips.style.gap = '8px';
         chips.style.marginTop = '8px';
 
-        ['Why','do','you','like','learning','English','?'].forEach(w=>{
+        // РАЗБИВАЕМ ВОПРОС НА СЛОВА
+        const rawQOrder = $('#questions').value.split('\n')[0] || 'Order Sentence Mode';
+        const words = rawQOrder.trim().split(/\s+/);
+
+        words.forEach(w=>{
           const c = document.createElement('div');
           c.textContent = w;
           c.style.background = 'rgba(255,255,255,.92)';
@@ -1206,7 +1225,6 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
 
       fbPrev.appendChild(wrap);
     }
-
     // Init
     fillLanguageSelect();
     fillFontsForLanguage($('#language').value);
