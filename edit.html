@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Редактор — Светлячки</title>
 
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   <style>
     :root{
       --ui-acc:#ffd700;
@@ -1076,7 +1086,15 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
       const q = document.createElement('div');
       // БЕРЕМ РЕАЛЬНЫЙ ТЕКСТ ИЗ ПОЛЯ ВОПРОСОВ
       const rawQ = $('#questions').value.split('\n')[0]; 
-      q.textContent = rawQ ? rawQ.trim() : 'Task Preview...';
+    // Рендер с поддержкой MathJax
+const s = rawQ ? rawQ.trim() : 'Task Preview...';
+q.innerHTML = s;
+
+// прогон MathJax после вставки
+if (window.MathJax?.typesetPromise) {
+  window.MathJax.typesetPromise([q]).catch(()=>{});
+}
+
       q.style.marginBottom = '10px';
       modal.appendChild(q);
 
