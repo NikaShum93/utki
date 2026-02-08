@@ -1200,7 +1200,7 @@ function wrapLatexIfNeeded(s){
       shuffled.forEach(opt => {
         const btn = document.createElement('button');
         btn.className = 'kgb-btn';
-        btn.textContent = opt;
+       btn.innerHTML = wrapLatexIfNeeded(opt);
 
         Object.assign(btn.style, {
           padding: '12px 14px',
