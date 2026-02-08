@@ -8,13 +8,16 @@
 <script>
   window.MathJax = {
     tex: {
+      packages: ['base', 'ams', 'autoload'],
       inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
     }
   };
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
   <style>
     :root{
       --ui-acc:#ffd700;
@@ -639,11 +642,51 @@
       ja:{inputPlaceholder:'答えを入力してください…', btnOk:'OK', done:'完了'},
       zh:{inputPlaceholder:'请输入答案…', btnOk:'OK', done:'完成'}
     };
-    function t(key){
-      const lang = $('#language')?.value || 'ru';
-      const dict = UI[lang] || UI.en;
-      return dict[key] || key;
-    }
+  function looksLikeLatex(s){
+  s = String(s||'').trim();
+  if(!s) return false;
+
+  // если уже размечено — не трогаем
+  if (s.includes('\\(') || s.includes('\\[')) return false;
+  if (s.includes('$') && s.lastIndexOf('$') !== s.indexOf('$')) return false;
+
+  // пропуски вида ___ — не формулы
+  if (/^_+$/.test(s)) return false;
+  if (/(_\s+_)+/.test(s)) return false;
+
+  // любая TeX-команда: \frac \sqrt \log \sum ...
+  if (/\\[a-zA-Z]+/.test(s)) return true;
+
+  // степени/индексы: x^2, x^{2}, a_1, a_{n}
+  if (/[A-Za-z0-9][\^_](\{[^}]+\}|[A-Za-z0-9]+)/.test(s)) return true;
+
+  return false;
+}
+
+function wrapLatexIfNeeded(s){
+  s = String(s||'').trim();
+  if (
+    s.includes('\\(') || s.includes('\\)') ||
+    s.includes('\\[') || s.includes('\\]') ||
+    s.includes('$$')
+  ) return s;
+
+  return looksLikeLatex(s) ? `\\(${s}\\)` : s;
+}
+
+function typeset(el){
+  try{
+    const MJ = window.MathJax;
+    if(!MJ || !MJ.typesetPromise) return;
+    MJ.typesetPromise([el]).catch(()=>{});
+  }catch(_){}
+}
+
+function t(key){
+  const lang = $('#language')?.value || 'ru';
+  const dict = UI[lang] || UI.en;
+  return dict[key] || key;
+}
 
     // Languages
     const LANGUAGE_OPTIONS = [
@@ -1083,20 +1126,14 @@ const wrongSoundUrl   = $('#wrongSound').value.trim();
         ? `0 0 18px ${cfg.style.task.borderColor || '#00f2fe'}`
         : '0 10px 26px rgba(0,0,0,.25)';
 
-      const q = document.createElement('div');
-      // БЕРЕМ РЕАЛЬНЫЙ ТЕКСТ ИЗ ПОЛЯ ВОПРОСОВ
-      const rawQ = $('#questions').value.split('\n')[0]; 
-    // Рендер с поддержкой MathJax
+     const q = document.createElement('div');
+// БЕРЕМ РЕАЛЬНЫЙ ТЕКСТ ИЗ ПОЛЯ ВОПРОСОВ
+const rawQ = $('#questions').value.split('\n')[0]; 
+// Рендер с поддержкой MathJax
 const s = rawQ ? rawQ.trim() : 'Task Preview...';
-q.innerHTML = s;
-
-// прогон MathJax после вставки
-if (window.MathJax?.typesetPromise) {
-  window.MathJax.typesetPromise([q]).catch(()=>{});
-}
-
-      q.style.marginBottom = '10px';
-      modal.appendChild(q);
+q.innerHTML = wrapLatexIfNeeded(s);
+q.style.marginBottom = '10px';
+modal.appendChild(q);
 
       const mode = cfg.mode;
 
@@ -1120,7 +1157,8 @@ if (window.MathJax?.typesetPromise) {
         previewOpts.forEach(txt=>{
           const b = document.createElement('button');
           b.type = 'button';
-          b.textContent = txt.trim();
+        b.innerHTML = wrapLatexIfNeeded(txt.trim());
+
           b.style.border = 'none';
           b.style.borderRadius = '999px';
           b.style.padding = '10px 12px';
@@ -1131,8 +1169,7 @@ if (window.MathJax?.typesetPromise) {
           b.style.cursor = 'pointer';
           list.appendChild(b);
         });
-        modal.appendChild(list);
-
+      modal.appendChild(list);
       } else if (mode === 'input'){
         const inp = document.createElement('input');
         inp.type = 'text';
@@ -1209,7 +1246,7 @@ if (window.MathJax?.typesetPromise) {
       }
 
       taskPrev.appendChild(modal);
-
+typeset(taskPrev);
       // Feedback preview
       const fbPrev = $('#fbPrev');
       fbPrev.innerHTML = '';
@@ -1248,7 +1285,8 @@ if (window.MathJax?.typesetPromise) {
       if (fbMode === 'both' || fbMode === 'text'){
         const label = document.createElement('div');
         const border2 = cfg.style.feedback.borderColor || '#e67e22';
-        label.textContent = cfg.finalFeedback || '🎉 Well Done!';
+      label.innerHTML = wrapLatexIfNeeded(cfg.finalFeedback || '🎉 Well Done!');
+
         label.style.padding = '12px 14px';
         label.style.borderRadius = '14px';
         label.style.border = `2px solid ${border2}`;
@@ -1261,8 +1299,9 @@ if (window.MathJax?.typesetPromise) {
         wrap.appendChild(label);
       }
 
-      fbPrev.appendChild(wrap);
-    }
+     fbPrev.appendChild(wrap);
+typeset(fbPrev);
+}
     // Init
     fillLanguageSelect();
     fillFontsForLanguage($('#language').value);
@@ -1312,8 +1351,13 @@ if (window.MathJax?.typesetPromise) {
     $('#testBtn').addEventListener('click', quickTest);
     $('#copyBtn').addEventListener('click', copyIframe);
 
-    setModeHint();
-    refreshPreview();
+   setModeHint();
+refreshPreview();
+
+window.MathJax?.startup?.promise?.then(() => {
+  refreshPreview();
+}).catch(()=>{});
+
   </script>
 </body>
 </html>
